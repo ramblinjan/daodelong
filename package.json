@@ -3,9 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "concurrently --names heartbeat,engine --prefix-colors cyan,green \"pnpm heartbeat\" \"pnpm engine\"",
+    "dev": "concurrently --names heartbeat,engine,face --prefix-colors cyan,green,magenta \"pnpm heartbeat\" \"pnpm engine\" \"pnpm face\"",
     "heartbeat": "tsx apps/engine/src/bootstrap.ts",
     "engine": "tsx apps/engine/src/breath.ts",
+    "face": "tsx apps/face/src/server.ts",
     "test": "node --test --import tsx/esm tests/lifecycle.yin.test.ts tests/lifecycle.yang.test.ts",
     "test:yin": "node --test --import tsx/esm tests/lifecycle.yin.test.ts",
     "test:yang": "node --test --import tsx/esm tests/lifecycle.yang.test.ts"
@@ -19,5 +20,9 @@
     "onlyBuiltDependencies": [
       "esbuild"
     ]
+  },
+  "dependencies": {
+    "graphql": "^16.13.2",
+    "graphql-yoga": "^5.21.0"
   }
 }
