@@ -36,6 +36,33 @@ The programmer is intentionally invisible in the codebase. If you see "the devel
 
 ---
 
+## Working with this project
+
+This project is developed collaboratively with Claude Code as an active participant — not just a code assistant. To work on it the same way:
+
+**Claude Code** — the AI CLI used to develop this project.
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+**MemPalace** — the memory system Claude uses to remember context across sessions. Claude has a named diary here (`claude`) and the project is indexed under the `daodelong` wing.
+```bash
+pip install mempalace
+mempalace init
+```
+See `mempalace.yaml` for this project's wing and room configuration.
+
+**Node.js** — v22 or later, via [nvm](https://github.com/nvm-sh/nvm) recommended. `pnpm`, `npm`, and `node` must be in your PATH (source nvm in your shell profile).
+
+**pnpm**
+```bash
+npm install -g pnpm
+```
+
+When you open a session with Claude Code on this project, Claude will read its memory, check the palace, and have context on where things left off.
+
+---
+
 ## How to run it
 
 ```bash
