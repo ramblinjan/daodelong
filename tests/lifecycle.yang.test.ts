@@ -10,14 +10,15 @@ import { fileURLToPath } from 'node:url';
 import type { LogEntry } from '@daodelong/shared';
 
 const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
-const TSX = resolve(ROOT, 'node_modules/.bin/tsx');
 const BOOTSTRAP = resolve(ROOT, 'apps/engine/src/bootstrap.ts');
 
 // I spawn bootstrap and collect its log stream for a fixed window.
 // I parse each line as a log entry — the organism speaks only in structured JSON.
 function observe(durationMs: number): Promise<LogEntry[]> {
   return new Promise((res, rej) => {
-    const proc = spawn(TSX, [BOOTSTRAP], {
+    // I use the same node binary that is running me, with tsx as an ESM loader.
+    // I do not rely on tsx being in PATH — it is not guaranteed in this environment.
+    const proc = spawn(process.execPath, ['--import', 'tsx/esm', BOOTSTRAP], {
       cwd: ROOT,
       env: { ...process.env, HEARTBEAT_INTERVAL_MS: '100' },
     });
