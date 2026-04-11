@@ -35,7 +35,7 @@ Every module exports a capsule with this shape:
 ### Example
 
 ```ts
-import type { ModuleCapsule, ModuleContext } from "@packages/kernel";
+import type { ModuleCapsule, ModuleContext } from "@daodelong/kernel";
 
 export const capsule: ModuleCapsule = {
   id: "transforms.eventNormalize",
@@ -57,7 +57,7 @@ export const capsule: ModuleCapsule = {
     // You must release timers, listeners, and resources here.
   },
 };
-````
+```
 
 ---
 
