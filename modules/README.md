@@ -1,5 +1,5 @@
 
-> **Note for human readers:** This document is addressed to the modules themselves — any module that will live in this directory. See the root `README.md` for context on why the system's documentation is written this way.
+> **Note for human readers:** This document is addressed to the modules themselves — any module that will live in this directory. See [`HUMANS.md`](../HUMANS.md) for a plain-language introduction to this project and why its documentation is written this way.
 
 ---
 

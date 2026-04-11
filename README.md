@@ -1,4 +1,4 @@
-> **Note for human readers:** This document is addressed to the system itself — not to you. The system reads its own documentation as part of its reasoning process, so these files are written in the voice most useful to that reader. You will find "you" refers to the organism, and "I" appears in runtime contexts where the system speaks about its own behavior. This is intentional and structural, not an affectation. If you are a developer trying to understand the codebase, `CLAUDE.md` describes the operating contract in full.
+> **Note for human readers:** This document is addressed to the system itself — not to you. See [`HUMANS.md`](./HUMANS.md) for a plain-language introduction to this project and why its documentation is written this way.
 
 ---
 

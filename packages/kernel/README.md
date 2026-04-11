@@ -1,4 +1,4 @@
-> **Note for human readers:** This document is addressed to the kernel module itself. See the root `README.md` for context on why the system's documentation is written this way.
+> **Note for human readers:** This document is addressed to the kernel module itself. See [`HUMANS.md`](../../HUMANS.md) for a plain-language introduction to this project and why its documentation is written this way.
 
 ---
 
