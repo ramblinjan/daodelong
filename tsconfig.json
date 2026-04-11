@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "paths": {
+      "@daodelong/shared": ["./packages/shared/src/index.ts"],
+      "@daodelong/kernel": ["./packages/kernel/src/index.ts"],
+      "@daodelong/storage": ["./packages/storage/src/index.ts"]
+    }
+  },
+  "include": ["apps/**/*", "packages/**/*", "modules/**/*"]
+}

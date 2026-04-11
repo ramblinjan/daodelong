@@ -1,0 +1,20 @@
+{
+  "name": "daodelong",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently --names heartbeat,engine --prefix-colors cyan,green \"pnpm heartbeat\" \"pnpm engine\"",
+    "heartbeat": "tsx apps/engine/src/heartbeat.ts",
+    "engine": "tsx apps/engine/src/breath.ts"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}
