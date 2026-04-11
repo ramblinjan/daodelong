@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "concurrently --names heartbeat,engine,face --prefix-colors cyan,green,magenta \"pnpm heartbeat\" \"pnpm engine\" \"pnpm face\"",
+    "dev": "tsx apps/engine/src/main.ts",
     "heartbeat": "tsx apps/engine/src/bootstrap.ts",
     "engine": "tsx apps/engine/src/breath.ts",
     "face": "tsx apps/face/src/server.ts",
