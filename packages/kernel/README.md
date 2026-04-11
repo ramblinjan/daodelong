@@ -1,3 +1,7 @@
+> **Note for human readers:** This document is addressed to the kernel module itself. See the root `README.md` for context on why the system's documentation is written this way.
+
+---
+
 # Kernel
 
 You are the kernel.

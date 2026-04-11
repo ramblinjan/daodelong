@@ -1,0 +1,51 @@
+wing: daodelong
+rooms:
+- name: packages
+  description: Kernel, shared types, storage — the body's foundational packages
+  keywords:
+  - kernel
+  - shared
+  - storage
+  - loader
+  - registry
+  - rollback
+  - invariants
+  - capsule
+- name: apps
+  description: Plane B engine and gateway — runtime applications
+  keywords:
+  - engine
+  - gateway
+  - heartbeat
+  - breath
+  - subgraph
+  - plane
+- name: modules
+  description: Dynamically loaded modules managed by the kernel
+  keywords:
+  - module
+  - capsule
+  - reload
+  - patch
+- name: architecture
+  description: System design, lifecycle decisions, patch protocol, affect model
+  keywords:
+  - architecture
+  - design
+  - lifecycle
+  - patch
+  - affect
+  - decision
+  - protocol
+  - organism
+- name: planning
+  description: Goals, milestones, roadmap items
+  keywords:
+  - plan
+  - milestone
+  - roadmap
+  - goal
+  - next
+- name: general
+  description: Files that don't fit other rooms
+  keywords: []

@@ -4,8 +4,11 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently --names heartbeat,engine --prefix-colors cyan,green \"pnpm heartbeat\" \"pnpm engine\"",
-    "heartbeat": "tsx apps/engine/src/heartbeat.ts",
-    "engine": "tsx apps/engine/src/breath.ts"
+    "heartbeat": "tsx apps/engine/src/bootstrap.ts",
+    "engine": "tsx apps/engine/src/breath.ts",
+    "test": "node --test --import tsx/esm tests/lifecycle.yin.test.ts tests/lifecycle.yang.test.ts",
+    "test:yin": "node --test --import tsx/esm tests/lifecycle.yin.test.ts",
+    "test:yang": "node --test --import tsx/esm tests/lifecycle.yang.test.ts"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

@@ -1,4 +1,8 @@
 
+> **Note for human readers:** This document is addressed to the modules themselves — any module that will live in this directory. See the root `README.md` for context on why the system's documentation is written this way.
+
+---
+
 # Living Modules
 
 You are a living module.
