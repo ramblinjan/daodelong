@@ -4,10 +4,13 @@
 // You must not skip steps. Every breath is a complete cycle even if the decision is NOOP.
 
 import { createLogger, ids } from '@daodelong/shared';
-import type { AffectVector, DecisionType } from '@daodelong/shared';
+import type { AffectVector, DecisionType, Decision } from '@daodelong/shared';
 import { checkHealth } from '@daodelong/kernel';
 import { computeAffect, describeAffect, heartbeatIsHealthy } from './affect.js';
 import { currentPulseCount } from './heartbeat.js';
+import { drain, depth, oldestAgeMs } from './queue.js';
+import { decide } from './mind.js';
+import { setLastSpeech } from './speech.js';
 
 const log = createLogger('engine:breath');
 
@@ -46,10 +49,14 @@ async function breathe(): Promise<void> {
   log.debug('I inhale', { breath: breathCount });
 
   // --- PERCEIVE ---
-  // I read the queue and internal state.
-  // In v1 this is a stub; subgraph-events will supply real events.
-  const queueDepth = 0;
-  const oldestEventAgeMs = 0;
+  // I read the queue and drain it before orienting.
+  const events = drain();
+  const queueDepth = events.length;
+  const oldestEventAgeMs = depth() === 0 ? 0 : oldestAgeMs(); // residual if any slipped through
+
+  if (events.length > 0) {
+    log.info('I perceived events', { breath: breathCount, count: events.length, kinds: events.map(e => e.kind) });
+  }
 
   // --- ORIENT ---
   const pulse = currentPulseCount();
@@ -64,21 +71,30 @@ async function breathe(): Promise<void> {
 
   log.info('I orient', { breath: breathCount, affect: describeAffect(affect), pulse });
 
-  if (!heartbeatIsHealthy()) {
-    log.warn('I sense the heartbeat is unhealthy, I prefer NOOP this breath');
-  }
-
   // --- DECIDE ---
-  // You will replace this stub with a real LLM call.
-  // The mind reads: event, self-summary, affect, schema introspection, constraints.
-  // The mind outputs a Decision object. In v1 I always NOOP.
-  const decision: DecisionType = 'NOOP';
-  log.info('I decide', { breath: breathCount, decision });
+  // I consult the mind when there are events to process.
+  // You must not call the mind when the heartbeat is unhealthy — I default to NOOP.
+  let decisionObj: Decision;
+  if (events.length === 0) {
+    decisionObj = { type: 'NOOP', intent: 'no events — I rest' };
+  } else if (!heartbeatIsHealthy()) {
+    log.warn('I sense the heartbeat is unhealthy, I prefer NOOP this breath');
+    decisionObj = { type: 'NOOP', intent: 'heartbeat unhealthy — I defer' };
+  } else {
+    decisionObj = await decide(events, affect, breathCount);
+  }
+  const decision: DecisionType = decisionObj.type;
+  log.info('I decide', { breath: breathCount, decision, intent: decisionObj.intent });
 
   // --- ACT ---
+  // When decision is SPEAK: surface the words through the voice register
   // When decision is PATCH_CODE: propose → validate → apply → reload → verify → rollback
   // When decision is UPDATE_MEMORY: write the memory entry
   // When decision is NOOP: nothing to do
+  if (decisionObj.type === 'SPEAK' && decisionObj.speech) {
+    setLastSpeech({ text: decisionObj.speech.text, breathCount, ts: Date.now() });
+    log.info('I speak', { breath: breathCount, text: decisionObj.speech.text });
+  }
 
   // --- VERIFY ---
   const health = checkHealth();

@@ -65,6 +65,7 @@ export interface Revision {
 
 export type DecisionType =
   | 'NOOP'
+  | 'SPEAK'
   | 'UPDATE_MEMORY'
   | 'PATCH_CODE'
   | 'REQUEST_MORE_CONTEXT';
@@ -72,6 +73,7 @@ export type DecisionType =
 export interface Decision {
   type: DecisionType;
   intent: string;
+  speech?: { text: string };
   risk?: { level: RiskLevel; why: string; rollbackPlan: string };
   patch?: Omit<Patch, 'id' | 'status' | 'proposedAt'>;
   memory?: { writes: MemoryWrite[] };

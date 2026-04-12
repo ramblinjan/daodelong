@@ -13,6 +13,11 @@ export const typeDefs = /* GraphQL */ `
     Recent activity — what the organism has been doing, in its own voice.
     """
     recent: [Moment!]!
+
+    """
+    The last thing the organism said, if it has spoken.
+    """
+    speech: Speech
   }
 
   type Mutation {
@@ -47,5 +52,12 @@ export const typeDefs = /* GraphQL */ `
     heard: Boolean!
     "An acknowledgment, in my voice."
     echo: String!
+  }
+
+  type Speech {
+    "What I said."
+    said: String!
+    "When I said it, in my terms."
+    when: String!
   }
 `;

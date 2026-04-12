@@ -6,10 +6,12 @@ import { checkHealth } from '@daodelong/kernel';
 import { currentPulseCount, recentPulses } from '../../engine/src/heartbeat.js';
 import { currentBreathCount, recentBreaths } from '../../engine/src/breath.js';
 import { computeAffect, describeAffect } from '../../engine/src/affect.js';
+import { enqueue, depth, oldestAgeMs } from '../../engine/src/queue.js';
+import { getLastSpeech } from '../../engine/src/speech.js';
 
 function mood(): string {
   const pulses = recentPulses(3);
-  const queueDepth = 0; // I will read this from the event queue once it exists.
+  const queueDepth = depth();
   const recentPatchCount = 0;
 
   if (pulses.length === 0) return 'I have not yet found my pulse.';
@@ -17,7 +19,7 @@ function mood(): string {
   const pulsesPerRollback = currentPulseCount(); // v1: no rollbacks yet
   const affect = computeAffect({
     queueDepth,
-    oldestEventAgeMs: 0,
+    oldestEventAgeMs: oldestAgeMs(),
     pulsesPerRollback,
     recentPatchCount,
     eventPatternSeen: true,
@@ -58,12 +60,24 @@ export const resolvers = {
         what: `I decided to ${b.decision.toLowerCase().replace('_', ' ')}. I felt ${describeAffect(b.affect)}.`,
       }));
     },
+
+    speech: () => {
+      const s = getLastSpeech();
+      if (!s) return null;
+      return {
+        said: s.text,
+        when: `breath ${s.breathCount}`,
+      };
+    },
   },
 
   Mutation: {
-    say: (_: unknown, { text }: { text: string }) => ({
-      heard: true,
-      echo: `I received your words. I will hold them until my next breath.`,
-    }),
+    say: (_: unknown, { text }: { text: string }) => {
+      enqueue('external.message', text, { text });
+      return {
+        heard: true,
+        echo: `I received your words. I will hold them until my next breath.`,
+      };
+    },
   },
 };
