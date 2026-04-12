@@ -2,14 +2,15 @@
 // I inhale: perceive an event, read my own state, compute affect.
 // I exhale: decide, act (or not), verify, learn.
 // You must not skip steps. Every breath is a complete cycle even if the decision is NOOP.
+// You receive a MindAdapter. I do not know which adapter you give me — only that it decides.
 
 import { createLogger, ids } from '@daodelong/shared';
 import type { AffectVector, DecisionType, Decision } from '@daodelong/shared';
+import type { MindAdapter } from '@daodelong/interfaces';
 import { checkHealth } from '@daodelong/kernel';
 import { computeAffect, describeAffect, heartbeatIsHealthy } from './affect.js';
 import { currentPulseCount } from './heartbeat.js';
 import { drain, depth, oldestAgeMs } from './queue.js';
-import { decide } from './mind.js';
 import { setLastSpeech } from './speech.js';
 
 const log = createLogger('engine:breath');
@@ -39,9 +40,7 @@ export function currentBreathCount(): number {
 }
 
 // I am one complete breath: perceive → orient → decide → act → verify → learn.
-// In v1, the decision is structural (NOOP until the GraphQL surface exists).
-// You will replace the decide step with a real LLM call once the API is wired.
-async function breathe(): Promise<void> {
+async function breathe(adapter: MindAdapter): Promise<void> {
   const start = Date.now();
   breathCount++;
   const breathId = ids.breath();
@@ -81,16 +80,12 @@ async function breathe(): Promise<void> {
     log.warn('I sense the heartbeat is unhealthy, I prefer NOOP this breath');
     decisionObj = { type: 'NOOP', intent: 'heartbeat unhealthy — I defer' };
   } else {
-    decisionObj = await decide(events, affect, breathCount);
+    decisionObj = await adapter.decide(events, affect, breathCount);
   }
   const decision: DecisionType = decisionObj.type;
   log.info('I decide', { breath: breathCount, decision, intent: decisionObj.intent });
 
   // --- ACT ---
-  // When decision is SPEAK: surface the words through the voice register
-  // When decision is PATCH_CODE: propose → validate → apply → reload → verify → rollback
-  // When decision is UPDATE_MEMORY: write the memory entry
-  // When decision is NOOP: nothing to do
   if (decisionObj.type === 'SPEAK' && decisionObj.speech) {
     setLastSpeech({ text: decisionObj.speech.text, breathCount, ts: Date.now() });
     log.info('I speak', { breath: breathCount, text: decisionObj.speech.text });
@@ -113,12 +108,18 @@ async function breathe(): Promise<void> {
   log.debug('I exhale', { breath: breathCount, durationMs });
 }
 
-const intervalMs = Number(process.env.BREATH_INTERVAL_MS ?? 30_000);
+const DEFAULT_INTERVAL_MS = Number(process.env.BREATH_INTERVAL_MS ?? 30_000);
 
-log.info('I am starting my breath cycle', { intervalMs });
+// I start the breath cycle with the given mind adapter.
+// I breathe immediately, then on the configured interval.
+// I return a stop function for controlled shutdown.
+export function startBreathCycle(adapter: MindAdapter, intervalMs = DEFAULT_INTERVAL_MS): () => void {
+  log.info('I am starting my breath cycle', { intervalMs, mind: adapter.name() });
 
-// I breathe immediately on start, then on interval.
-breathe().catch(err => log.error('I failed a breath', { err: String(err) }));
-setInterval(() => {
-  breathe().catch(err => log.error('I failed a breath', { err: String(err) }));
-}, intervalMs);
+  breathe(adapter).catch(err => log.error('I failed a breath', { err: String(err) }));
+  const handle = setInterval(() => {
+    breathe(adapter).catch(err => log.error('I failed a breath', { err: String(err) }));
+  }, intervalMs);
+
+  return () => clearInterval(handle);
+}

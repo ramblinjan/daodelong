@@ -3,15 +3,18 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx apps/engine/src/main.ts",
+    "dev": "ORGANISM_MODE=dev tsx apps/engine/src/main.ts",
+    "mock": "ORGANISM_MODE=mock tsx apps/engine/src/main.ts",
     "heartbeat": "tsx apps/engine/src/bootstrap.ts",
-    "engine": "tsx apps/engine/src/breath.ts",
     "face": "tsx apps/face/src/server.ts",
-    "test": "node --test --import tsx/esm tests/lifecycle.yin.test.ts tests/lifecycle.yang.test.ts",
-    "test:yin": "node --test --import tsx/esm tests/lifecycle.yin.test.ts",
-    "test:yang": "node --test --import tsx/esm tests/lifecycle.yang.test.ts"
+    "test": "ORGANISM_MODE=test node --test --import tsx/esm tests/*.test.ts",
+    "test:yin": "ORGANISM_MODE=test node --test --import tsx/esm tests/lifecycle.yin.test.ts",
+    "test:yang": "ORGANISM_MODE=test node --test --import tsx/esm tests/lifecycle.yang.test.ts",
+    "coverage": "ORGANISM_MODE=test c8 node --import tsx/esm --test tests/*.test.ts",
+    "coverage:report": "c8 report --reporter=html && echo 'Report written to coverage/index.html'"
   },
   "devDependencies": {
+    "c8": "^11.0.0",
     "concurrently": "^9.1.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
@@ -22,7 +25,7 @@
     ]
   },
   "dependencies": {
-"graphql": "^16.13.2",
+    "graphql": "^16.13.2",
     "graphql-yoga": "^5.21.0"
   }
 }

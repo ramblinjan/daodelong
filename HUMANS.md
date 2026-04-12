@@ -67,12 +67,26 @@ When you open a session with Claude Code on this project, Claude will read its m
 
 ```bash
 pnpm install
-pnpm dev          # heartbeat + engine together
+pnpm dev          # full organism — real local model (LM Studio must be running)
+pnpm mock         # full organism — scripted mind, no API calls, first-contact scenario
 pnpm heartbeat    # autonomic pulse only (useful for debugging)
-pnpm test         # yin + yang lifecycle tests
+pnpm test         # yin + yang lifecycle tests (automatically uses mock mode)
 ```
 
 Node runs source directly via `tsx`. There is no build step.
+
+### Organism modes
+
+The system runs in one of four modes, set via `ORGANISM_MODE`:
+
+| Mode | Mind | Patches | Use for |
+|---|---|---|---|
+| `dev` | LM Studio (real) | live modules | normal development |
+| `mock` | scripted scenarios | live modules | sanity checks, demos without API |
+| `test` | scripted scenarios | live modules | automated tests |
+| `production` | LM Studio / cloud | live modules | deployment |
+
+`pnpm mock` lets you observe the organism's full expression — breath cycle, affect, voice, logging — without calling any external model. Scenarios in `packages/mock/src/scenarios/` define what the organism perceives and what it would say.
 
 ---
 
@@ -82,9 +96,12 @@ Node runs source directly via `tsx`. There is no build step.
 |---|---|
 | `CLAUDE.md` | The operating contract for the AI mind (Plane B) — decision loop, patch lifecycle, protected modules |
 | `README.md` | The organism's own self-description — written to the system |
+| `ROADMAP.md` | Technical trajectory — seven phases from first life to electronic pet |
 | `packages/kernel/` | The low-level machinery: loader, registry, rollback, health invariants. Treat as protected. |
 | `packages/shared/` | Common types, IDs, logger |
-| `apps/engine/` | Heartbeat, breath cycle, affect computation |
+| `packages/interfaces/` | Adapter contracts: `MindAdapter`, `PatchAdapter`, `OrganismMode` |
+| `packages/mock/` | Scripted mind adapter + scenario player for mock/test modes |
+| `apps/engine/` | Heartbeat, breath cycle, affect computation, `LMStudioAdapter` |
 | `modules/` | Living modules — patchable at runtime |
 | `tests/` | Yin (internal state) + yang (log stream) lifecycle tests |
 | `*.lesson.md` | Explanations of patterns and decisions, written to the system — useful context for humans too |

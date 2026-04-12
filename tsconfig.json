@@ -9,7 +9,9 @@
     "paths": {
       "@daodelong/shared": ["./packages/shared/src/index.ts"],
       "@daodelong/kernel": ["./packages/kernel/src/index.ts"],
-      "@daodelong/storage": ["./packages/storage/src/index.ts"]
+      "@daodelong/storage": ["./packages/storage/src/index.ts"],
+      "@daodelong/interfaces": ["./packages/interfaces/src/index.ts"],
+      "@daodelong/mock": ["./packages/mock/src/index.ts"]
     }
   },
   "include": ["apps/**/*", "packages/**/*", "modules/**/*"]

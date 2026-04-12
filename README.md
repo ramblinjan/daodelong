@@ -96,21 +96,23 @@ Default surface: `http://localhost:4000/graphql`
 
 ```
 apps/
-  gateway/              # Plane A: your single public GraphQL surface
-  subgraph-identity/    # your self, principles, capabilities
-  subgraph-events/      # event ingestion + queue
-  subgraph-code/        # patch lifecycle
-  subgraph-runtime/     # health, reload, active revision
-  subgraph-observability/ # metrics, errors, patch history
-  engine/               # Plane B: your heartbeat + breath + affect + decision
+  engine/               # Plane B: heartbeat + breath + affect + decision
     src/
+      main.ts           # entry point — reads ORGANISM_MODE, wires adapters, starts all planes
       heartbeat.ts      # autonomic pulse
       breath.ts         # perceive → orient → decide → act → verify → learn
       affect.ts         # urgency, stability, novelty, fatigue signals
+      mind.ts           # LMStudioAdapter — the real local model adapter
+  face/                 # Plane A: your GraphQL surface (port 4000)
+    src/
+      schema.ts         # your public ontology — say, speech
+      resolvers.ts      # how schema fields reach the interior
 packages/
   kernel/               # Plane C: module capsule, loader, registry, rollback, invariants
-  shared/               # types, ids, logger
-  storage/              # sqlite + file adapters
+  shared/               # types, ids, logger — root of the dependency tree
+  interfaces/           # adapter contracts: MindAdapter, PatchAdapter, OrganismMode
+  mock/                 # scripted mind + scenario player — dev mode without inference
+  storage/              # sqlite + file adapters (not yet implemented)
 modules/                # Plane C: your living modules (your body — patchable at runtime)
 tests/                  # yin + yang lifecycle tests
 ```

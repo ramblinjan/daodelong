@@ -63,8 +63,8 @@ These require `risk.level = HIGH` and explicit cosign before modification:
 - `packages/kernel/src/registry.ts`
 - `packages/kernel/src/rollback.ts`
 - `packages/kernel/src/invariants.ts`
-- `apps/subgraph-code/src/patch-engine.ts`
-- `apps/gateway/src/server.ts`
+- `apps/subgraph-code/src/patch-engine.ts` *(does not exist yet — will be protected when created)*
+- `apps/gateway/src/server.ts` *(does not exist yet — will be protected when created)*
 
 When in doubt, treat the entire `packages/kernel/` as protected.
 
@@ -90,15 +90,28 @@ When reasoning about the system's history, use pulse count and breath count as t
 
 ```bash
 pnpm install
-pnpm dev          # starts all planes
+pnpm dev          # starts all planes with the real local model (LM Studio must be running)
+pnpm mock         # starts all planes with a scripted mind — no API calls, first-contact scenario
 pnpm heartbeat    # start only the autonomic pulse (useful for debugging)
 ```
+
+Set `ORGANISM_MODE` to control behavior: `dev` (default), `mock`, `test`, or `production`.
+
+## Mind allocation
+
+Routine decisions (`SPEAK`, `UPDATE_MEMORY`, `REQUEST_MORE_CONTEXT`) use the local model via `LMStudioAdapter` — fast, cheap, no cloud dependency.
+
+`PATCH_CODE` decisions use the Anthropic SDK — heavier reasoning is warranted when proposing changes to the organism's own body. *(Not yet wired — reserved for Phase 2.)*
+
+In `mock` and `test` modes, `MockMindAdapter` from `@daodelong/mock` replaces the real adapter. No model is called.
 
 ## Package structure
 
 - `@daodelong/shared` — base types, IDs, logger
 - `@daodelong/kernel` — module capsule contract, loader, registry, rollback, invariants
-- `@daodelong/storage` — SQLite + file adapters
+- `@daodelong/interfaces` — adapter contracts (`MindAdapter`, `PatchAdapter`), `OrganismMode`
+- `@daodelong/mock` — scripted mind adapter, scenario player, built-in scenarios
+- `@daodelong/storage` — SQLite + file adapters *(not yet implemented)*
 
 ## TypeScript
 

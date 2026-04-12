@@ -23,5 +23,6 @@ if (!result.ok) {
   process.exit(1);
 }
 
-// I start the heartbeat only after the body is ready.
-await import('./heartbeat.js');
+// I start the heartbeat only after the body is ready — pulse 1 must be healthy.
+const { startHeartbeat } = await import('./heartbeat.js');
+startHeartbeat();

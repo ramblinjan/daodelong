@@ -3,3 +3,5 @@ node_modules/
 .env
 *.js.map
 .DS_Store
+coverage/
+.c8_output/

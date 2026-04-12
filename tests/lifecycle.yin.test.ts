@@ -43,9 +43,11 @@ test('loading core satisfies the health invariant', async () => {
 test('the first pulse after loading core is healthy', async () => {
   await loadModule(CORE_PATH, ids.revision(), ctx);
 
-  const { recentPulses, stop } = await import(
+  const { recentPulses, startHeartbeat, stop } = await import(
     pathToFileURL(resolve(ROOT, 'apps/engine/src/heartbeat.ts')).href
   );
+
+  startHeartbeat();
 
   try {
     const pulses = recentPulses(1);

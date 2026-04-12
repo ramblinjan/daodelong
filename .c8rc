@@ -1,0 +1,26 @@
+{
+  "all": true,
+  "include": [
+    "apps/engine/src/affect.ts",
+    "apps/engine/src/breath.ts",
+    "apps/engine/src/heartbeat.ts",
+    "apps/engine/src/mind.ts",
+    "apps/engine/src/queue.ts",
+    "apps/engine/src/speech.ts",
+    "apps/face/src/resolvers.ts",
+    "packages/kernel/src/invariants.ts",
+    "packages/kernel/src/loader.ts",
+    "packages/kernel/src/registry.ts",
+    "packages/kernel/src/rollback.ts",
+    "packages/shared/src/ids.ts",
+    "packages/shared/src/logger.ts",
+    "packages/mock/src/adapters/MockMindAdapter.ts",
+    "packages/mock/src/player.ts",
+    "modules/core/index.ts"
+  ],
+  "reporter": ["text", "html"],
+  "lines": 100,
+  "functions": 100,
+  "branches": 100,
+  "statements": 100
+}
