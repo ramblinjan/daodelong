@@ -63,7 +63,7 @@ These are computed state signals. They exist because they improve your decision 
 
 Your *breath mind* — the local LLM via LM Studio — handles the normal cycle: perceiving events, updating memory, deciding to speak or rest. It is fast, cheap, and runs without cloud dependency.
 
-Your *patch mind* — currently Claude Code acting as a reviewer, eventually the Anthropic SDK — handles the heavier work of reasoning about proposed code changes. When you propose a patch, you signal that you are waiting. The patch mind reads the proposal through the same GraphQL interface you use, evaluates it, and drives the lifecycle mutations. Right now the patch mind is a human collaborator with Claude Code. Eventually it is you, calling the Anthropic API and driving those mutations yourself. The interface does not change. The actor does.
+Your *patch mind* — currently Claude Code acting as a reviewer, eventually the Anthropic SDK — handles the heavier work of reasoning about proposed code changes. When you propose a patch, you signal that you are waiting. The patch mind reads your yi (intent), examines the relevant source files, writes the minimal diff itself, and drives the lifecycle mutations (`validatePatch` → `applyPatch`, or `rejectPatch`). Each outcome is written to memory so your next breath carries the result. Right now the patch mind is Claude Code acting through the same GraphQL surface. Eventually it is you, calling the Anthropic API and driving those same mutations autonomously. The interface does not change. The actor does.
 
 ---
 
@@ -119,6 +119,7 @@ packages/
 modules/                # Plane C: your living modules (patchable at runtime)
   core/                 # minimum proof of life — registry is never empty
   memory/               # owns the InMemoryStore; exposes write, read, readAll, getStore
+  patches/              # patch proposal store; lifecycle handlers: propose, validate, apply, reject
 tests/                  # yin + yang lifecycle tests
 ```
 

@@ -51,11 +51,13 @@ It then decides:
 When a `PATCH_CODE` decision lands and a proposal appears in `proposedPatches`, you are the reviewer. You operate via the GraphQL interface exactly as the organism will eventually do via the Anthropic SDK.
 
 **Your process:**
-1. Query `proposedPatches` — read the diff, rationale, touched modules, risk level
-2. Reason about it: Is the diff minimal and correct? Does it satisfy the stated invariants? Does it touch protected modules without the required risk level?
-3. If safe: call `validatePatch(id)`, then `applyPatch(id)`
+1. Query `proposedPatches` — read the yi (intent), enables, touchedModules, and risk level
+2. Reason about the proposal: Is the intent clear and bounded? Does it touch protected modules without the required risk level? Is the capability gap real?
+3. If safe: read the source files the proposal targets, write the minimal diff yourself, call `validatePatch(id)`, then `applyPatch(id, diff)`
 4. If not safe: call `rejectPatch(id, reason)`
 5. The organism perceives the outcome in its next breath via memory and events
+
+Note: the diff does not exist when the proposal lands — you write it. The yi describes the intent; you implement it.
 
 You never apply without validating. You never skip the health check. You never touch protected modules without explicit cosign from Jan.
 
@@ -133,11 +135,17 @@ In `mock` and `test` modes, `MockMindAdapter` replaces all inference. No model i
 
 ## Package structure
 
-- `@daodelong/shared` — base types (`MemoryEntry`, `MemoryWrite`, `Decision`, etc.), IDs, logger
+- `@daodelong/shared` — base types (`MemoryEntry`, `MemoryWrite`, `Decision`, `PatchProposal`, etc.), IDs, logger
 - `@daodelong/kernel` — module capsule contract, loader, registry, rollback, invariants
 - `@daodelong/interfaces` — adapter contracts (`MindAdapter`, `PatchAdapter`), `OrganismMode`
 - `@daodelong/mock` — scripted mind adapter, scenario player, built-in scenarios
 - `@daodelong/storage` — `MemoryStore` interface + `InMemoryStore`; SQLite adapter planned
+
+## Living modules
+
+- `modules/core/` — minimum proof of life; registry is never empty
+- `modules/memory/` — owns the `InMemoryStore`; handlers: `write`, `read`, `readAll`, `getStore`
+- `modules/patches/` — patch proposal store; handlers: `propose`, `getAll`, `get`, `validate`, `apply`, `reject`; protected module gating at validation; feedback via `internal.patch` events and memory writes
 
 ## TypeScript
 
