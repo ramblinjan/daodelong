@@ -85,6 +85,22 @@ test('patches module disposes cleanly', async () => {
   await entry.capsule.dispose();
 });
 
+test('patches.propose applies defensive defaults when model omits optional fields', async () => {
+  // I guard against a model that produces a PATCH_CODE decision without all fields.
+  const proposal = await registry.call('patches', 'propose', {
+    yi: undefined,
+    enables: undefined,
+    touchedModules: null,
+    risk: undefined,
+  }) as PatchProposal;
+
+  assert.strictEqual(proposal.yi, '');
+  assert.strictEqual(proposal.enables, '');
+  assert.deepStrictEqual(proposal.touchedModules, []);
+  assert.strictEqual(proposal.risk, 'LOW');
+  assert.strictEqual(proposal.status, 'proposed');
+});
+
 test('patches.propose stores a proposal and returns it', async () => {
   const proposal = await registry.call('patches', 'propose', {
     yi: 'Add modules/preferences/ to store per-person preferences.',
