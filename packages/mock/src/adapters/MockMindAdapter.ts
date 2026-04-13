@@ -4,7 +4,7 @@
 // You use me when the goal is to observe the organism's own machinery, not the model's output.
 
 import { createLogger } from '@daodelong/shared';
-import type { Event, AffectVector, Decision } from '@daodelong/shared';
+import type { Event, AffectVector, Decision, MemoryEntry } from '@daodelong/shared';
 import type { MindAdapter } from '@daodelong/interfaces';
 import type { ScriptedDecision } from '../scenario.js';
 
@@ -23,7 +23,7 @@ export class MockMindAdapter implements MindAdapter {
     return 'mock';
   }
 
-  async decide(events: Event[], affect: AffectVector, breathCount: number): Promise<Decision> {
+  async decide(_events: Event[], _affect: AffectVector, breathCount: number, _memory: MemoryEntry[]): Promise<Decision> {
     if (this.cursor >= this.queue.length) {
       log.debug('I have no more scripted decisions — I rest', { breath: breathCount });
       return { type: 'NOOP', intent: 'scripted sequence exhausted — I rest' };

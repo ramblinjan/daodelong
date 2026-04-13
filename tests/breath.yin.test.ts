@@ -11,6 +11,8 @@ import { loadModule } from '@daodelong/kernel';
 import { createLogger, ids } from '@daodelong/shared';
 import { InMemoryStore } from '@daodelong/storage';
 import { MockMindAdapter } from '../packages/mock/src/adapters/MockMindAdapter.js';
+import type { MindAdapter } from '@daodelong/interfaces';
+import type { MemoryEntry } from '@daodelong/shared';
 import { tick, startBreathCycle, recentBreaths, currentBreathCount } from '../apps/engine/src/breath.js';
 import { tick as heartbeatTick } from '../apps/engine/src/heartbeat.js';
 import { enqueue, drain } from '../apps/engine/src/queue.js';
@@ -136,6 +138,37 @@ test('breathe writes memory entries to the store on UPDATE_MEMORY decision', asy
   assert.strictEqual(entry!.kind, 'RELATIONAL');
   assert.deepStrictEqual(entry!.value, { module: 'core' });
   assert.strictEqual(entry!.ttlDays, 7);
+});
+
+test('perceive step passes prior memory to the mind on subsequent breaths', async () => {
+  await setup();
+  const localStore = new InMemoryStore();
+  let receivedMemory: MemoryEntry[] = [];
+
+  // First breath: write a memory entry via UPDATE_MEMORY decision
+  enqueue('external.message', 'Calvin introduced himself', {});
+  await tick(new MockMindAdapter([{
+    decision: {
+      type: 'UPDATE_MEMORY',
+      intent: 'I remember Calvin.',
+      memory: { writes: [{ kind: 'RELATIONAL', key: 'person:calvin', value: { name: 'Calvin' }, ttlDays: 30 }] },
+    },
+  }]), localStore);
+
+  // Second breath: spy adapter captures what memory arrives
+  enqueue('external.message', 'Calvin speaks again', {});
+  const spy: MindAdapter = {
+    name: () => 'spy',
+    decide: async (_events, _affect, _breathCount, memory) => {
+      receivedMemory = memory;
+      return { type: 'NOOP', intent: 'I observed the memory' };
+    },
+  };
+  await tick(spy, localStore);
+
+  assert.strictEqual(receivedMemory.length, 1);
+  assert.strictEqual(receivedMemory[0].key, 'person:calvin');
+  assert.deepStrictEqual(receivedMemory[0].value, { name: 'Calvin' });
 });
 
 test('breath history trims when it exceeds MAX_HISTORY', async () => {

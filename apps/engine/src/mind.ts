@@ -4,7 +4,7 @@
 // I implement MindAdapter. You can be replaced by any other adapter without changing the breath cycle.
 
 import { createLogger } from '@daodelong/shared';
-import type { AffectVector, Decision, Event } from '@daodelong/shared';
+import type { AffectVector, Decision, Event, MemoryEntry } from '@daodelong/shared';
 import type { MindAdapter } from '@daodelong/interfaces';
 import { describeAffect } from './affect.js';
 
@@ -43,7 +43,11 @@ export class LMStudioAdapter implements MindAdapter {
     return `lmstudio:${this.model}`;
   }
 
-  async decide(events: Event[], affect: AffectVector, breathCount: number): Promise<Decision> {
+  async decide(events: Event[], affect: AffectVector, breathCount: number, memory: MemoryEntry[]): Promise<Decision> {
+    const memoryLines = memory.length > 0
+      ? ['', `Memory (${memory.length} entries):`, ...memory.map(m => `  [${m.key}] ${JSON.stringify(m.value)}`)]
+      : [];
+
     const userMessage = [
       `Breath: ${breathCount}`,
       `Affect: ${describeAffect(affect)}`,
@@ -51,6 +55,7 @@ export class LMStudioAdapter implements MindAdapter {
       events.length > 0
         ? events.map(e => `  [${e.kind}] ${e.lexical}`).join('\n')
         : '  (none)',
+      ...memoryLines,
       '',
       'Decide.',
     ].join('\n');

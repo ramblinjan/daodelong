@@ -20,8 +20,8 @@ test('MockMindAdapter plays scripted decisions in order', async () => {
     { label: 'speak', decision: { type: 'SPEAK', intent: 'I greet the world.', speech: { text: 'Hello.' } } },
     { label: 'rest',  decision: { type: 'NOOP',  intent: 'I have nothing more to say.' } },
   ]);
-  const d1 = await adapter.decide([], CALM, 1);
-  const d2 = await adapter.decide([], CALM, 2);
+  const d1 = await adapter.decide([], CALM, 1, []);
+  const d2 = await adapter.decide([], CALM, 2, []);
   assert.strictEqual(d1.type, 'SPEAK');
   assert.strictEqual(d2.type, 'NOOP');
 });
@@ -30,8 +30,8 @@ test('MockMindAdapter returns NOOP when the scripted sequence is exhausted', asy
   const adapter = new MockMindAdapter([
     { decision: { type: 'SPEAK', intent: 'I speak once.', speech: { text: 'Once.' } } },
   ]);
-  await adapter.decide([], CALM, 1); // consume
-  const d = await adapter.decide([], CALM, 2);
+  await adapter.decide([], CALM, 1, []); // consume
+  const d = await adapter.decide([], CALM, 2, []);
   assert.strictEqual(d.type, 'NOOP');
   assert.ok(d.intent.includes('exhausted'));
 });
@@ -42,9 +42,9 @@ test('MockMindAdapter.remaining tracks unplayed decisions', async () => {
     { decision: { type: 'NOOP', intent: 'b' } },
   ]);
   assert.strictEqual(adapter.remaining(), 2);
-  await adapter.decide([], CALM, 1);
+  await adapter.decide([], CALM, 1, []);
   assert.strictEqual(adapter.remaining(), 1);
-  await adapter.decide([], CALM, 2);
+  await adapter.decide([], CALM, 2, []);
   assert.strictEqual(adapter.remaining(), 0);
 });
 
@@ -52,10 +52,10 @@ test('MockMindAdapter.reset replays the sequence from the beginning', async () =
   const adapter = new MockMindAdapter([
     { decision: { type: 'SPEAK', intent: 'I return.', speech: { text: 'Again.' } } },
   ]);
-  await adapter.decide([], CALM, 1); // consume
+  await adapter.decide([], CALM, 1, []); // consume
   adapter.reset();
   assert.strictEqual(adapter.remaining(), 1);
-  const d = await adapter.decide([], CALM, 2);
+  const d = await adapter.decide([], CALM, 2, []);
   assert.strictEqual(d.type, 'SPEAK');
 });
 

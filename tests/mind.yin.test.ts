@@ -5,7 +5,7 @@
 import { test, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { LMStudioAdapter } from '../apps/engine/src/mind.js';
-import type { AffectVector, Event } from '@daodelong/shared';
+import type { AffectVector, Event, MemoryEntry } from '@daodelong/shared';
 
 const CALM: AffectVector = { urgency: 0, stability: 1, novelty: 0.1, fatigue: 0 };
 const NO_EVENTS: Event[] = [];
@@ -34,7 +34,7 @@ test('LMStudioAdapter returns the parsed Decision on a good response', async () 
   }));
 
   const adapter = new LMStudioAdapter();
-  const result = await adapter.decide(NO_EVENTS, CALM, 1);
+  const result = await adapter.decide(NO_EVENTS, CALM, 1, []);
   assert.strictEqual(result.type, 'SPEAK');
   assert.strictEqual(result.intent, 'I greet the world.');
   mock.restoreAll();
@@ -44,7 +44,7 @@ test('LMStudioAdapter returns NOOP on a bad HTTP status', async () => {
   mock.method(globalThis, 'fetch', async () => fakeBadResponse(503));
 
   const adapter = new LMStudioAdapter();
-  const result = await adapter.decide(NO_EVENTS, CALM, 1);
+  const result = await adapter.decide(NO_EVENTS, CALM, 1, []);
   assert.strictEqual(result.type, 'NOOP');
   assert.ok(result.intent.includes('unreachable'));
   mock.restoreAll();
@@ -54,7 +54,7 @@ test('LMStudioAdapter returns NOOP when fetch throws a network error', async () 
   mock.method(globalThis, 'fetch', async () => { throw new Error('ECONNREFUSED'); });
 
   const adapter = new LMStudioAdapter();
-  const result = await adapter.decide(NO_EVENTS, CALM, 1);
+  const result = await adapter.decide(NO_EVENTS, CALM, 1, []);
   assert.strictEqual(result.type, 'NOOP');
   assert.ok(result.intent.includes('unreachable'));
   mock.restoreAll();
@@ -66,7 +66,7 @@ test('LMStudioAdapter returns NOOP when the response is not valid JSON', async (
   }));
 
   const adapter = new LMStudioAdapter();
-  const result = await adapter.decide(NO_EVENTS, CALM, 1);
+  const result = await adapter.decide(NO_EVENTS, CALM, 1, []);
   assert.strictEqual(result.type, 'NOOP');
   assert.ok(result.intent.includes('parse failure'));
   mock.restoreAll();
@@ -78,7 +78,7 @@ test('LMStudioAdapter returns NOOP when choices content is null', async () => {
   }));
 
   const adapter = new LMStudioAdapter();
-  const result = await adapter.decide(NO_EVENTS, CALM, 1);
+  const result = await adapter.decide(NO_EVENTS, CALM, 1, []);
   assert.strictEqual(result.type, 'NOOP');
   assert.ok(result.intent.includes('parse failure'));
   mock.restoreAll();
@@ -95,11 +95,31 @@ test('LMStudioAdapter builds the user message from events and affect', async () 
     { id: 'e1', kind: 'external.message', lexical: 'hello', semantic: {}, receivedAt: Date.now() },
   ];
   const adapter = new LMStudioAdapter();
-  await adapter.decide(events, CALM, 5);
+  await adapter.decide(events, CALM, 5, []);
 
   const body = capturedBody as { messages: { role: string; content: string }[] };
   const userMsg = body.messages.find(m => m.role === 'user')!.content;
   assert.ok(userMsg.includes('Breath: 5'));
   assert.ok(userMsg.includes('hello'));
+  mock.restoreAll();
+});
+
+test('LMStudioAdapter includes memory entries in the user message when present', async () => {
+  let capturedBody: unknown;
+  mock.method(globalThis, 'fetch', async (_url: string, init: RequestInit) => {
+    capturedBody = JSON.parse(init.body as string);
+    return fakeOkResponse({ choices: [{ message: { content: JSON.stringify({ type: 'NOOP', intent: 'x' }) } }] });
+  });
+
+  const entries: MemoryEntry[] = [
+    { key: 'person:calvin', kind: 'RELATIONAL', value: { name: 'Calvin' }, ttlDays: 30, writtenAt: Date.now() },
+  ];
+  const adapter = new LMStudioAdapter();
+  await adapter.decide(NO_EVENTS, CALM, 1, entries);
+
+  const body = capturedBody as { messages: { role: string; content: string }[] };
+  const userMsg = body.messages.find(m => m.role === 'user')!.content;
+  assert.ok(userMsg.includes('person:calvin'));
+  assert.ok(userMsg.includes('Memory (1 entries):'));
   mock.restoreAll();
 });

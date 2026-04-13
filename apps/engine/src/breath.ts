@@ -50,12 +50,17 @@ async function breathe(adapter: MindAdapter, memory: MemoryStore): Promise<void>
 
   // --- PERCEIVE ---
   // I read the queue and drain it before orienting.
+  // I also read what I already know — memory entries arrive with me into the decision.
   const events = drain();
+  const memoryEntries = memory.readAll();
   const queueDepth = events.length;
   const oldestEventAgeMs = depth() === 0 ? 0 : /* c8 ignore next */ oldestAgeMs(); // residual if any slipped through
 
   if (events.length > 0) {
     log.info('I perceived events', { breath: breathCount, count: events.length, kinds: events.map(e => e.kind) });
+  }
+  if (memoryEntries.length > 0) {
+    log.debug('I carry memory into this breath', { breath: breathCount, entries: memoryEntries.length });
   }
 
   // --- ORIENT ---
@@ -81,7 +86,7 @@ async function breathe(adapter: MindAdapter, memory: MemoryStore): Promise<void>
     log.warn('I sense the heartbeat is unhealthy, I prefer NOOP this breath');
     decisionObj = { type: 'NOOP', intent: 'heartbeat unhealthy — I defer' };
   } else {
-    decisionObj = await adapter.decide(events, affect, breathCount);
+    decisionObj = await adapter.decide(events, affect, breathCount, memoryEntries);
   }
   const decision: DecisionType = decisionObj.type;
   log.info('I decide', { breath: breathCount, decision, intent: decisionObj.intent });

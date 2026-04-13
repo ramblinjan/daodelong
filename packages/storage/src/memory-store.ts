@@ -2,15 +2,8 @@
 // I hold entries keyed by a string identifier. I report what I know when asked.
 // You must not reason here. I only store and retrieve.
 
-import type { MemoryWrite } from '@daodelong/shared';
-
-export interface MemoryEntry {
-  key: string;
-  kind: MemoryWrite['kind'];
-  value: unknown;
-  ttlDays: number;
-  writtenAt: number;
-}
+import type { MemoryWrite, MemoryEntry } from '@daodelong/shared';
+export type { MemoryEntry } from '@daodelong/shared';
 
 // I define what any memory store must be able to do.
 // You implement me to back memory with SQLite, a file, or a remote service.

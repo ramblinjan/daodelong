@@ -3,13 +3,13 @@
 // You depend on me. I depend on nothing but shared types.
 // Every adapter — local model, cloud model, sandbox patcher — satisfies one of these shapes.
 
-import type { Event, AffectVector, Decision, Patch } from '@daodelong/shared';
+import type { Event, AffectVector, Decision, Patch, MemoryEntry } from '@daodelong/shared';
 import type { EventKind } from '@daodelong/shared';
 
 // I decide what the organism does next.
 // You implement me if you are a mind — local model, cloud model, scripted fixture, or silence.
 export interface MindAdapter {
-  decide(events: Event[], affect: AffectVector, breathCount: number): Promise<Decision>;
+  decide(events: Event[], affect: AffectVector, breathCount: number, memory: MemoryEntry[]): Promise<Decision>;
   name(): string;
 }
 

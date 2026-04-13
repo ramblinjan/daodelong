@@ -86,3 +86,11 @@ export interface MemoryWrite {
   value: unknown;
   ttlDays: number;
 }
+
+export interface MemoryEntry {
+  key: string;
+  kind: MemoryWrite['kind'];
+  value: unknown;
+  ttlDays: number;
+  writtenAt: number;
+}
