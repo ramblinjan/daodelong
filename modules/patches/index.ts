@@ -28,10 +28,10 @@ export const capsule: ModuleCapsule = {
       const i = intent as PatchIntent;
       const proposal: PatchProposal = {
         id: ids.patch(),
-        yi: i.yi,
-        enables: i.enables,
-        touchedModules: i.touchedModules,
-        risk: i.risk.level,
+        yi: i.yi ?? '',
+        enables: i.enables ?? '',
+        touchedModules: Array.isArray(i.touchedModules) ? i.touchedModules : [],
+        risk: i.risk?.level ?? 'LOW',
         status: 'proposed',
         proposedAt: Date.now(),
       };
