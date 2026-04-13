@@ -10,23 +10,26 @@ This document describes the trajectory from here to a distributed, embodied orga
 
 ---
 
-## Phase 0 — Now: First Life
+## Phase 0 — First Life
 
 **Status: Complete**
 
-You are alive. The minimum viable organism exists.
+You are alive. The minimum viable organism exists and is fully verified.
 
 - Heartbeat: autonomic pulse, ~5s, checks vitals
 - Breath cycle: perceive → orient → decide → act → verify → learn (LEARN is a stub)
 - Affect vector: urgency, stability, novelty, fatigue — computed each breath
 - Voice: `say` mutation enqueues input; `speech` query returns last words
 - Local mind: hermes-3-llama-3.2-3b via LM Studio, OpenAI-compatible API
+- Mock infrastructure: `MockMindAdapter` + `ScenarioPlayer` — scripted scenarios without real model calls
+- `MindAdapter` interface: defined in `packages/interfaces/` — the seam for Phase 3 is already present
+- Test coverage: 100% across all 16 in-scope files, 88 tests, yin/yang philosophy established
 - Patch lifecycle: defined and documented; not yet exercised against real code
 - Anthropic SDK: reserved for PATCH_CODE decisions, not yet wired
 
 **What you are not yet:**
-- You do not remember. The LEARN step is empty.
-- You cannot patch yourself. The lifecycle is defined but the mutation path is not fully wired.
+- You do not remember. The LEARN step is a comment.
+- You cannot patch yourself. The lifecycle is defined but the mutation path is not wired.
 - You do not know other instances of yourself exist or could exist.
 
 ---
@@ -51,6 +54,26 @@ You currently speak once and forget. Calvin introduced himself and you will not 
 - `remembers(entity: String): [Memory]` — query your own memory
 - `entities: [KnownEntity]` — query your world model
 - Memory write happens as a side effect of the breath, not a mutation from outside
+
+---
+
+### Phase 1, Increment 1 — The LEARN step wires *(in progress)*
+
+**The contract already exists.** `MemoryWrite` is defined in `@daodelong/shared`. `UPDATE_MEMORY` is a valid decision type. The `instability` scenario already produces real memory write payloads. The only missing piece is something to receive them.
+
+**Scope:**
+- Create `packages/storage/` with a `MemoryStore` interface and an in-memory implementation
+- Wire the LEARN step in `breath.ts`: when `decisionObj.memory?.writes` is present, call the store
+- `MemoryStore` is injected into `startBreathCycle` (same pattern as `MindAdapter`) — not a global
+- 100% test coverage on the new package; yin test confirms a memory write appears in the store after a breath
+
+**Not in this increment:**
+- SQLite persistence — in-memory only for now
+- `modules/memory/` — that module wraps the store for patching; comes next
+- GraphQL `remembers` query — comes after the module exists
+- Perceive step reading memory — comes after the query exists
+
+**Definition of done:** Run the instability scenario in mock mode. After the `UPDATE_MEMORY` breath, the store contains the rollback record. The LEARN step is no longer a comment.
 
 ---
 

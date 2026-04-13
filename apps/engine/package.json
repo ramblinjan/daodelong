@@ -5,6 +5,7 @@
   "type": "module",
   "dependencies": {
     "@daodelong/shared": "workspace:*",
-    "@daodelong/kernel": "workspace:*"
+    "@daodelong/kernel": "workspace:*",
+    "@daodelong/storage": "workspace:*"
   }
 }

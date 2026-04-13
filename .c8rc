@@ -16,6 +16,7 @@
     "packages/shared/src/logger.ts",
     "packages/mock/src/adapters/MockMindAdapter.ts",
     "packages/mock/src/player.ts",
+    "packages/storage/src/memory-store.ts",
     "modules/core/index.ts"
   ],
   "reporter": ["text", "html"],

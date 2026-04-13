@@ -2,11 +2,12 @@
 // I inhale: perceive an event, read my own state, compute affect.
 // I exhale: decide, act (or not), verify, learn.
 // You must not skip steps. Every breath is a complete cycle even if the decision is NOOP.
-// You receive a MindAdapter. I do not know which adapter you give me — only that it decides.
+// You receive a MindAdapter and a MemoryStore. I do not know which implementations you give me.
 
 import { createLogger, ids } from '@daodelong/shared';
 import type { AffectVector, DecisionType, Decision } from '@daodelong/shared';
 import type { MindAdapter } from '@daodelong/interfaces';
+import type { MemoryStore } from '@daodelong/storage';
 import { checkHealth } from '@daodelong/kernel';
 import { computeAffect, describeAffect, heartbeatIsHealthy } from './affect.js';
 import { currentPulseCount } from './heartbeat.js';
@@ -40,7 +41,7 @@ export function currentBreathCount(): number {
 }
 
 // I am one complete breath: perceive → orient → decide → act → verify → learn.
-async function breathe(adapter: MindAdapter): Promise<void> {
+async function breathe(adapter: MindAdapter, memory: MemoryStore): Promise<void> {
   const start = Date.now();
   breathCount++;
   const breathId = ids.breath();
@@ -98,7 +99,13 @@ async function breathe(adapter: MindAdapter): Promise<void> {
   }
 
   // --- LEARN ---
-  // You will write memory entries here when the memory subgraph exists.
+  // I write whatever the mind decided to remember.
+  if (decisionObj.memory?.writes) {
+    for (const entry of decisionObj.memory.writes) {
+      memory.write(entry);
+    }
+    log.info('I learned', { breath: breathCount, writes: decisionObj.memory.writes.length });
+  }
 
   const durationMs = Date.now() - start;
   const record: BreathRecord = { id: breathId, count: breathCount, affect, decision, ts: start, durationMs };
@@ -110,21 +117,21 @@ async function breathe(adapter: MindAdapter): Promise<void> {
 
 // I fire one breath synchronously for the given adapter without starting a timer.
 // You call me in tests to advance breath state on demand.
-export async function tick(adapter: MindAdapter): Promise<void> {
-  await breathe(adapter);
+export async function tick(adapter: MindAdapter, memory: MemoryStore): Promise<void> {
+  await breathe(adapter, memory);
 }
 
 const DEFAULT_INTERVAL_MS = Number(process.env.BREATH_INTERVAL_MS ?? /* c8 ignore next */ 30_000);
 
-// I start the breath cycle with the given mind adapter.
+// I start the breath cycle with the given mind adapter and memory store.
 // I breathe immediately, then on the configured interval.
 // I return a stop function for controlled shutdown.
-export function startBreathCycle(adapter: MindAdapter, intervalMs = DEFAULT_INTERVAL_MS): () => void {
+export function startBreathCycle(adapter: MindAdapter, memory: MemoryStore, intervalMs = DEFAULT_INTERVAL_MS): () => void {
   log.info('I am starting my breath cycle', { intervalMs, mind: adapter.name() });
 
-  breathe(adapter).catch(err => log.error('I failed a breath', { err: String(err) }));
+  breathe(adapter, memory).catch(err => log.error('I failed a breath', { err: String(err) }));
   const handle = setInterval(() => {
-    breathe(adapter).catch(err => log.error('I failed a breath', { err: String(err) }));
+    breathe(adapter, memory).catch(err => log.error('I failed a breath', { err: String(err) }));
   }, intervalMs);
 
   return () => clearInterval(handle);

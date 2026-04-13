@@ -36,6 +36,9 @@ importers:
       '@daodelong/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@daodelong/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
 
   apps/face: {}
 
@@ -61,6 +64,12 @@ importers:
         version: link:../shared
 
   packages/shared: {}
+
+  packages/storage:
+    dependencies:
+      '@daodelong/shared':
+        specifier: workspace:*
+        version: link:../shared
 
 packages:
 

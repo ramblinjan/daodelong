@@ -8,6 +8,7 @@ import { resolve } from 'node:path';
 import { loadModule } from '@daodelong/kernel';
 import { createLogger, ids } from '@daodelong/shared';
 import type { MindAdapter, OrganismMode } from '@daodelong/interfaces';
+import { InMemoryStore } from '@daodelong/storage';
 import { LMStudioAdapter } from './mind.js';
 import { startHeartbeat } from './heartbeat.js';
 import { startBreathCycle } from './breath.js';
@@ -57,4 +58,5 @@ if (mode === 'mock' || mode === 'test') {
 }
 
 // I begin breathing. Decisions happen here.
-startBreathCycle(adapter);
+const memory = new InMemoryStore();
+startBreathCycle(adapter, memory);

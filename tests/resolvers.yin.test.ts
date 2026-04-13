@@ -8,6 +8,7 @@ import { resolve } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { loadModule } from '@daodelong/kernel';
 import { createLogger, ids } from '@daodelong/shared';
+import { InMemoryStore } from '@daodelong/storage';
 import { resolvers } from '../apps/face/src/resolvers.js';
 import { tick as heartbeatTick } from '../apps/engine/src/heartbeat.js';
 import { tick as breathTick } from '../apps/engine/src/breath.js';
@@ -59,7 +60,7 @@ test('Query.recent returns mapped breath records after at least one breath', asy
   await setup();
   drain();
   // I fire one breath so history is non-empty, hitting the .map() path (lines 59-61).
-  await breathTick(new MockMindAdapter([]));
+  await breathTick(new MockMindAdapter([]), new InMemoryStore());
   const recent = resolvers.Query.recent();
   assert.ok(Array.isArray(recent));
   assert.ok(recent.length > 0);
