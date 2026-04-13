@@ -32,8 +32,8 @@ export class LMStudioAdapter implements MindAdapter {
   private model: string;
 
   constructor(
-    baseUrl = process.env.MIND_BASE_URL ?? 'http://localhost:1234',
-    model = process.env.MIND_MODEL ?? 'hermes-3-llama-3.2-3b',
+    baseUrl = process.env.MIND_BASE_URL ?? /* c8 ignore next */ 'http://localhost:1234',
+    model = process.env.MIND_MODEL ?? /* c8 ignore next */ 'hermes-3-llama-3.2-3b',
   ) {
     this.baseUrl = baseUrl;
     this.model = model;

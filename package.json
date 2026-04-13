@@ -3,14 +3,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "ORGANISM_MODE=dev tsx apps/engine/src/main.ts",
-    "mock": "ORGANISM_MODE=mock tsx apps/engine/src/main.ts",
-    "heartbeat": "tsx apps/engine/src/bootstrap.ts",
-    "face": "tsx apps/face/src/server.ts",
-    "test": "ORGANISM_MODE=test node --test --import tsx/esm tests/*.test.ts",
-    "test:yin": "ORGANISM_MODE=test node --test --import tsx/esm tests/lifecycle.yin.test.ts",
-    "test:yang": "ORGANISM_MODE=test node --test --import tsx/esm tests/lifecycle.yang.test.ts",
-    "coverage": "ORGANISM_MODE=test c8 node --import tsx/esm --test tests/*.test.ts",
+    "dev": "node --env-file=.env.defaults --env-file-if-exists=.env --import tsx/esm apps/engine/src/main.ts",
+    "mock": "ORGANISM_MODE=mock node --env-file=.env.defaults --env-file-if-exists=.env --import tsx/esm apps/engine/src/main.ts",
+    "heartbeat": "node --env-file=.env.defaults --env-file-if-exists=.env --import tsx/esm apps/engine/src/bootstrap.ts",
+    "face": "node --env-file=.env.defaults --env-file-if-exists=.env --import tsx/esm apps/face/src/server.ts",
+    "test": "node --env-file=.env.defaults --env-file=.env.test --env-file-if-exists=.env --test --import tsx/esm tests/*.test.ts",
+    "test:yin": "node --env-file=.env.defaults --env-file=.env.test --env-file-if-exists=.env --test --import tsx/esm tests/lifecycle.yin.test.ts",
+    "test:yang": "node --env-file=.env.defaults --env-file=.env.test --env-file-if-exists=.env --test --import tsx/esm tests/lifecycle.yang.test.ts",
+    "coverage": "c8 node --env-file=.env.defaults --env-file=.env.test --env-file-if-exists=.env --import tsx/esm --test tests/*.test.ts",
     "coverage:report": "c8 report --reporter=html && echo 'Report written to coverage/index.html'"
   },
   "devDependencies": {

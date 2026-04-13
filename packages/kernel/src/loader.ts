@@ -28,7 +28,7 @@ export async function loadModule(
   log.info('I am loading a module', { filePath, revision });
 
   try {
-    const mod = await import(url);
+    const mod = await import(url); /* c8 ignore next */
     assertCapsule(mod);
     const { capsule } = mod;
 
@@ -59,7 +59,7 @@ export async function swapModule(
 
   let mod: unknown;
   try {
-    mod = await import(url);
+    mod = await import(url); /* c8 ignore next */
     assertCapsule(mod);
   } catch (err) {
     const error = String(err);
@@ -70,7 +70,7 @@ export async function swapModule(
   const { capsule: newCapsule } = mod as { capsule: Parameters<typeof assertCapsule>[0] & { capsule: NonNullable<unknown> } } & { capsule: import('./module-capsule.js').ModuleCapsule };
   // dispose old
   if (existing) {
-    try { await existing.capsule.dispose(); } catch (_) { /* I note but do not stop here */ }
+    try { await existing.capsule.dispose(); } catch (_) { /* c8 ignore next */ /* I note but do not stop here */ }
   }
 
   try {

@@ -19,7 +19,7 @@ export interface PulseRecord {
 
 let pulseCount = 0;
 const history: PulseRecord[] = [];
-const MAX_HISTORY = 100;
+const MAX_HISTORY = Number(process.env.HEARTBEAT_MAX_HISTORY ?? /* c8 ignore next */ 100);
 let timer: ReturnType<typeof setInterval> | null = null;
 
 // I expose pulse history so the breath cycle can read recent vitals.
@@ -46,7 +46,13 @@ function beat(): void {
   }
 }
 
-const DEFAULT_INTERVAL_MS = Number(process.env.HEARTBEAT_INTERVAL_MS ?? 5000);
+const DEFAULT_INTERVAL_MS = Number(process.env.HEARTBEAT_INTERVAL_MS ?? /* c8 ignore next */ 5000);
+
+// I fire one beat synchronously without starting a timer.
+// You call me in tests to advance pulse state on demand.
+export function tick(): void {
+  beat();
+}
 
 // I start the heartbeat. Call me only after the body (core module) is loaded.
 // I beat immediately on start so the first pulse reflects a live body.

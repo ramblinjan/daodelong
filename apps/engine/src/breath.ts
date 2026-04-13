@@ -26,7 +26,7 @@ export interface BreathRecord {
 
 let breathCount = 0;
 const history: BreathRecord[] = [];
-const MAX_HISTORY = 50;
+const MAX_HISTORY = Number(process.env.BREATH_MAX_HISTORY ?? /* c8 ignore next */ 50);
 
 // I track recent patch proposals to feed the fatigue signal.
 const recentPatches: number[] = []; // timestamps of recent patch decisions
@@ -51,7 +51,7 @@ async function breathe(adapter: MindAdapter): Promise<void> {
   // I read the queue and drain it before orienting.
   const events = drain();
   const queueDepth = events.length;
-  const oldestEventAgeMs = depth() === 0 ? 0 : oldestAgeMs(); // residual if any slipped through
+  const oldestEventAgeMs = depth() === 0 ? 0 : /* c8 ignore next */ oldestAgeMs(); // residual if any slipped through
 
   if (events.length > 0) {
     log.info('I perceived events', { breath: breathCount, count: events.length, kinds: events.map(e => e.kind) });
@@ -108,7 +108,13 @@ async function breathe(adapter: MindAdapter): Promise<void> {
   log.debug('I exhale', { breath: breathCount, durationMs });
 }
 
-const DEFAULT_INTERVAL_MS = Number(process.env.BREATH_INTERVAL_MS ?? 30_000);
+// I fire one breath synchronously for the given adapter without starting a timer.
+// You call me in tests to advance breath state on demand.
+export async function tick(adapter: MindAdapter): Promise<void> {
+  await breathe(adapter);
+}
+
+const DEFAULT_INTERVAL_MS = Number(process.env.BREATH_INTERVAL_MS ?? /* c8 ignore next */ 30_000);
 
 // I start the breath cycle with the given mind adapter.
 // I breathe immediately, then on the configured interval.

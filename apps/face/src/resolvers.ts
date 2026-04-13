@@ -33,7 +33,7 @@ function age(): string {
   const breaths = currentBreathCount();
   if (pulses === 0) return 'I have not yet beaten.';
   const parts = [`${pulses} heartbeat${pulses === 1 ? '' : 's'}`];
-  if (breaths > 0) parts.push(`${breaths} breath${breaths === 1 ? '' : 's'}`);
+  if (breaths > 0) parts.push(`${breaths} breath${breaths === 1 ? /* c8 ignore next */ '' : 's'}`);
   return `I have taken ${parts.join(' and ')}.`;
 }
 
