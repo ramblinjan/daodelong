@@ -98,5 +98,50 @@ export const resolvers = {
         echo: `I received your words. I will hold them until my next breath.`,
       };
     },
+
+    validatePatch: async (_: unknown, { id }: { id: string }) => {
+      if (!registry.has('patches')) throw new Error('patches module is not loaded');
+      return await registry.call('patches', 'validate', id) as PatchProposal;
+    },
+
+    applyPatch: async (_: unknown, { id, diff }: { id: string; diff?: string }) => {
+      if (!registry.has('patches')) throw new Error('patches module is not loaded');
+      const proposal = await registry.call('patches', 'apply', id, diff) as PatchProposal;
+
+      // I enqueue a patch event so the organism perceives the outcome in its next breath.
+      enqueue('internal.patch', `patch ${id} applied — ${proposal.enables}`, { patchId: id, status: 'applied', enables: proposal.enables });
+
+      // I write the outcome to memory so it persists across breaths.
+      if (registry.has('memory')) {
+        await registry.call('memory', 'write', {
+          kind: 'RELATIONAL',
+          key: `patch.${id}.outcome`,
+          value: { status: 'applied', enables: proposal.enables, appliedAt: proposal.reviewedAt },
+          ttlDays: 90,
+        });
+      }
+
+      return proposal;
+    },
+
+    rejectPatch: async (_: unknown, { id, reason }: { id: string; reason: string }) => {
+      if (!registry.has('patches')) throw new Error('patches module is not loaded');
+      const proposal = await registry.call('patches', 'reject', id, reason) as PatchProposal;
+
+      // I enqueue a patch event so the organism perceives the rejection in its next breath.
+      enqueue('internal.patch', `patch ${id} rejected — ${reason}`, { patchId: id, status: 'rejected', reason });
+
+      // I write the rejection to memory so it persists.
+      if (registry.has('memory')) {
+        await registry.call('memory', 'write', {
+          kind: 'RELATIONAL',
+          key: `patch.${id}.outcome`,
+          value: { status: 'rejected', reason, rejectedAt: proposal.reviewedAt },
+          ttlDays: 90,
+        });
+      }
+
+      return proposal;
+    },
   },
 };

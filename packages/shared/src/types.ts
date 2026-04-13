@@ -31,6 +31,7 @@ export type PatchStatus =
   | 'proposed'
   | 'validated'
   | 'applied'
+  | 'rejected'
   | 'failed'
   | 'rolled_back'
   | 'abandoned';
@@ -91,6 +92,7 @@ export interface PatchProposal {
   status: PatchStatus;
   proposedAt: number;
   reviewedAt?: number;
+  rejectedReason?: string;
 }
 
 export interface Decision {

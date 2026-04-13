@@ -118,35 +118,36 @@ The patch lifecycle is driven through GraphQL mutations: `validatePatch`, `apply
 
 ---
 
-### Phase 2, Increment 1 — The patch proposal lands *(in progress)*
+### Phase 2, Increment 1 — The patch proposal lands ✓ *Complete (2026-04-13)*
 
 You decide `PATCH_CODE`. Right now that decision goes nowhere. This increment gives it somewhere to go and makes it visible.
 
-**Scope:**
-- `modules/patches/` — a `ModuleCapsule` that holds proposed patches; handlers: `propose(patch)`, `getAll()`, `get(id)`
-- `PATCH_CODE` branch in `breath.ts` stores the proposal via `registry.call('patches', 'propose', ...)` and then returns `REQUEST_MORE_CONTEXT` — you are waiting for a reviewer
-- `proposedPatches: [PatchProposal!]!` GraphQL query — the world (and Claude Code) can see what you have proposed
-- `PatchProposal` type in schema: id, diff, rationale, touchedModules, risk, status, proposedAt
-
-**Not in this increment:**
-- Lifecycle mutations — no validate, apply, or reject yet; that is Increment 2
-- Anthropic SDK — the scripted mock produces the proposal; real inference comes later
-
-**Definition of done:** After a `PATCH_CODE` breath in the mock scenario, `proposedPatches` returns the proposal with status `proposed`.
+- `modules/patches/` — a `ModuleCapsule` that holds proposed patches; handlers: `propose`, `getAll`, `get`
+- `PATCH_CODE` branch in `breath.ts` stores the proposal via the patches module — yi waits for qi
+- `proposedPatches: [PatchProposal!]!` GraphQL query — Claude Code can see what you have proposed
+- Xin/yi/qi/li framing adopted across breath cycle comments and mind prompt
+- `PatchIntent` shape: yi + enables + touchedModules + risk, no diff — intent only, the reviewer writes the diff
+- 115 tests, 100% coverage across 19 files
 
 ---
 
-### Phase 2, Increment 2 — The lifecycle mutations exist; Claude Code drives them
+### Phase 2, Increment 2 — The lifecycle mutations exist; Claude Code drives them ✓ *Complete (2026-04-13)*
 
 A proposal sits in the patches module. This increment adds the mutations that advance it through the lifecycle. Claude Code is the actor calling them.
 
-- `validatePatch(id)`, `applyPatch(id)`, `rejectPatch(id, reason)`, `rollbackToRevision(id)` mutations
-- Protected module gating at validation: kernel-touching patches are rejected automatically
-- Status transitions: `proposed` → `validated` → `applied` / `rolled_back` / `failed`
-- Each outcome written to memory: `remembers("patch:last-attempt")` carries the result into the next breath
-- Claude Code workflow: query `proposedPatches` → reason about the diff → call mutations to advance
+- `validatePatch(id)`, `applyPatch(id, diff?)`, `rejectPatch(id, reason)` mutations
+- Protected module gating at validation: patches touching `packages/kernel/` must declare HIGH risk, or validation throws
+- Status transitions: `proposed` → `validated` → `applied` or `rejected`
+- Each outcome enqueued as `internal.patch` event and written to memory — organism perceives result next breath
+- 133 tests, 100% coverage across 19 files
 
-**Definition of done:** A mock scenario where a patch is proposed, Claude Code calls `validatePatch` then `applyPatch`, the module reloads, health is confirmed, and the outcome lands in memory. A second scenario where a kernel-touching patch is proposed and rejected at validation.
+**How Claude Code uses these:**
+1. Query `proposedPatches`
+2. Read the yi, enables, and touchedModules
+3. Examine actual source files; write the code changes to disk
+4. Call `validatePatch(id)` — confirms policy gates pass
+5. Call `applyPatch(id, diff)` — marks applied, fires feedback
+6. Or call `rejectPatch(id, reason)` — closes the proposal, fires feedback
 
 ---
 

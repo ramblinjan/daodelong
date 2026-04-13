@@ -6,6 +6,13 @@ import type { ModuleCapsule, ModuleContext } from '@daodelong/kernel';
 import type { PatchIntent, PatchProposal } from '@daodelong/shared';
 import { ids } from '@daodelong/shared';
 
+// I protect these paths. Any proposal touching them must declare HIGH risk or I will refuse validation.
+const PROTECTED_PREFIXES = [
+  'packages/kernel/',
+  'apps/subgraph-code/',
+  'apps/gateway/',
+];
+
 const proposals = new Map<string, PatchProposal>();
 
 export const capsule: ModuleCapsule = {
@@ -38,6 +45,47 @@ export const capsule: ModuleCapsule = {
 
     get(id: unknown): PatchProposal | undefined {
       return proposals.get(id as string);
+    },
+
+    validate(id: unknown): PatchProposal {
+      const proposal = proposals.get(id as string);
+      if (!proposal) throw new Error(`patch not found: ${id as string}`);
+      if (proposal.status !== 'proposed') throw new Error(`patch ${id as string} is not in proposed state: ${proposal.status}`);
+
+      // I refuse to validate any proposal that touches protected modules without HIGH risk declared.
+      const touchesProtected = proposal.touchedModules.some(m =>
+        PROTECTED_PREFIXES.some(prefix => m.startsWith(prefix))
+      );
+      if (touchesProtected && proposal.risk !== 'HIGH') {
+        throw new Error(`patch ${id as string} touches a protected module — risk must be HIGH, got ${proposal.risk}`);
+      }
+
+      proposal.status = 'validated';
+      return proposal;
+    },
+
+    apply(id: unknown, diff: unknown): PatchProposal {
+      const proposal = proposals.get(id as string);
+      if (!proposal) throw new Error(`patch not found: ${id as string}`);
+      if (proposal.status !== 'validated') throw new Error(`patch ${id as string} must be validated before applying, status: ${proposal.status}`);
+
+      if (typeof diff === 'string') proposal.diff = diff;
+      proposal.status = 'applied';
+      proposal.reviewedAt = Date.now();
+      return proposal;
+    },
+
+    reject(id: unknown, reason: unknown): PatchProposal {
+      const proposal = proposals.get(id as string);
+      if (!proposal) throw new Error(`patch not found: ${id as string}`);
+      if (proposal.status === 'applied' || proposal.status === 'rejected') {
+        throw new Error(`patch ${id as string} cannot be rejected from status: ${proposal.status}`);
+      }
+
+      proposal.status = 'rejected';
+      proposal.rejectedReason = reason as string;
+      proposal.reviewedAt = Date.now();
+      return proposal;
     },
   },
 

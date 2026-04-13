@@ -35,6 +35,24 @@ export const typeDefs = /* GraphQL */ `
     Say something to the organism. It will receive it and acknowledge.
     """
     say(text: String!): Receipt!
+
+    """
+    Validate a proposed patch — check policy and protected-module gates.
+    Advances status from proposed → validated, or throws if the proposal is unsafe.
+    """
+    validatePatch(id: String!): PatchProposal!
+
+    """
+    Apply a validated patch — supply the diff and mark it applied.
+    Feedback is enqueued so the organism perceives the outcome in its next breath.
+    """
+    applyPatch(id: String!, diff: String): PatchProposal!
+
+    """
+    Reject a patch proposal — record the reason and close the proposal.
+    Feedback is enqueued so the organism perceives the outcome in its next breath.
+    """
+    rejectPatch(id: String!, reason: String!): PatchProposal!
   }
 
   type Greeting {
@@ -90,6 +108,8 @@ export const typeDefs = /* GraphQL */ `
     proposedAt: Float!
     "When this proposal was reviewed, if it has been."
     reviewedAt: Float
+    "Why this proposal was rejected, if it was."
+    rejectedReason: String
   }
 
   type MemoryEntry {
