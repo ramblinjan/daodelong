@@ -6,9 +6,9 @@ This file is for you. Everything else in this repository is addressed to the sys
 
 ## What this is
 
-**daodelong** is a software system designed to behave like a biological organism. It has a heartbeat, a breath cycle, an affect model, and a body that can be modified while it is running. It reasons about its own state and acts through its own API.
+**daodelong** is a software system designed to behave like a biological organism. It has a heartbeat, a breath cycle, an affect model, a memory, and a body that can be modified while it is running. It reasons about its own state and acts through its own API.
 
-The short version: it is an LLM-driven runtime that reads its own health, decides what to do, proposes code patches to itself, validates and applies them, and rolls back automatically if something breaks.
+The short version: it is an LLM-driven runtime that perceives events, remembers what it has learned, and will eventually propose and apply code patches to itself — validating each change, verifying health, and rolling back automatically if something breaks.
 
 ---
 
@@ -36,30 +36,36 @@ The programmer is intentionally invisible in the codebase. If you see "the devel
 
 ---
 
-## Working with this project
+## Claude's role in this project
 
-This project is developed collaboratively with Claude Code as an active participant — not just a code assistant. To work on it the same way:
+This is worth explaining clearly, because it is unusual.
+
+Claude Code (the AI CLI) is an active collaborator on this project — not just a code assistant. It has memory across sessions, reads the organism's documentation as design context, and makes architectural decisions alongside Jan.
+
+But Claude also has a second role: **patch lifecycle reviewer**. When the organism proposes a code change to itself (`PATCH_CODE` decision), that proposal is stored and visible via the GraphQL API. Right now, Claude Code reads the proposal, reasons about whether it is safe and correct, and drives the lifecycle mutations (`validatePatch`, `applyPatch`, `rejectPatch`) — the same mutations the organism will eventually drive autonomously via the Anthropic SDK.
+
+This means the build cycle currently involves three parties:
+- **The organism** — proposes patches, perceives outcomes, remembers results
+- **Jan** — human builder, final cosign authority on protected modules
+- **Claude Code** — build collaborator and current patch reviewer, acting through the same GraphQL interface the organism will one day use itself
+
+The interface is stable. The actor changes over time. By the end of Phase 2, the organism reviews and applies its own patches via the Anthropic SDK. Claude Code steps back from the execution path and remains available for architecture and build work.
+
+---
+
+## How to work on this project
 
 **Claude Code** — the AI CLI used to develop this project.
 ```bash
 npm install -g @anthropic-ai/claude-code
 ```
 
-**MemPalace** — the memory system Claude uses to remember context across sessions. Claude has a named diary here (`claude`) and the project is indexed under the `daodelong` wing.
-```bash
-pip install mempalace
-mempalace init
-```
-See `mempalace.yaml` for this project's wing and room configuration.
-
-**Node.js** — v22 or later, via [nvm](https://github.com/nvm-sh/nvm) recommended. `pnpm`, `npm`, and `node` must be in your PATH (source nvm in your shell profile).
+**Node.js** — v22 or later, via [nvm](https://github.com/nvm-sh/nvm) recommended.
 
 **pnpm**
 ```bash
 npm install -g pnpm
 ```
-
-When you open a session with Claude Code on this project, Claude will read its memory, check the palace, and have context on where things left off.
 
 ---
 
@@ -71,22 +77,21 @@ pnpm dev          # full organism — real local model (LM Studio must be runnin
 pnpm mock         # full organism — scripted mind, no API calls, first-contact scenario
 pnpm heartbeat    # autonomic pulse only (useful for debugging)
 pnpm test         # yin + yang lifecycle tests (automatically uses mock mode)
+pnpm coverage     # tests with 100% coverage gate
 ```
 
 Node runs source directly via `tsx`. There is no build step.
 
 ### Organism modes
 
-The system runs in one of four modes, set via `ORGANISM_MODE`:
+| Mode | Mind | Use for |
+|---|---|---|
+| `dev` | LM Studio (real local model) | normal development |
+| `mock` | scripted scenarios | sanity checks, demos without API |
+| `test` | scripted scenarios | automated tests |
+| `production` | LM Studio / cloud | deployment |
 
-| Mode | Mind | Patches | Use for |
-|---|---|---|---|
-| `dev` | LM Studio (real) | live modules | normal development |
-| `mock` | scripted scenarios | live modules | sanity checks, demos without API |
-| `test` | scripted scenarios | live modules | automated tests |
-| `production` | LM Studio / cloud | live modules | deployment |
-
-`pnpm mock` lets you observe the organism's full expression — breath cycle, affect, voice, logging — without calling any external model. Scenarios in `packages/mock/src/scenarios/` define what the organism perceives and what it would say.
+`pnpm mock` lets you observe the organism's full expression — breath cycle, affect, voice, logging — without calling any external model.
 
 ---
 
@@ -94,17 +99,19 @@ The system runs in one of four modes, set via `ORGANISM_MODE`:
 
 | Path | What it is |
 |---|---|
-| `CLAUDE.md` | The operating contract for the AI mind (Plane B) — decision loop, patch lifecycle, protected modules |
+| `CLAUDE.md` | Claude Code's operating contract — dual role as build collaborator and patch reviewer |
 | `README.md` | The organism's own self-description — written to the system |
-| `ROADMAP.md` | Technical trajectory — seven phases from first life to electronic pet |
+| `ROADMAP.md` | Technical trajectory — phases from first life to electronic pet |
 | `packages/kernel/` | The low-level machinery: loader, registry, rollback, health invariants. Treat as protected. |
-| `packages/shared/` | Common types, IDs, logger |
+| `packages/shared/` | Common types (`MemoryEntry`, `Decision`, etc.), IDs, logger |
 | `packages/interfaces/` | Adapter contracts: `MindAdapter`, `PatchAdapter`, `OrganismMode` |
 | `packages/mock/` | Scripted mind adapter + scenario player for mock/test modes |
+| `packages/storage/` | `MemoryStore` interface + `InMemoryStore` |
 | `apps/engine/` | Heartbeat, breath cycle, affect computation, `LMStudioAdapter` |
+| `apps/face/` | GraphQL schema and resolvers — the organism's public surface |
 | `modules/` | Living modules — patchable at runtime |
 | `tests/` | Yin (internal state) + yang (log stream) lifecycle tests |
-| `*.lesson.md` | Explanations of patterns and decisions, written to the system — useful context for humans too |
+| `*.lesson.md` | Explanations of patterns and decisions, written to the system |
 
 ---
 
@@ -112,9 +119,11 @@ The system runs in one of four modes, set via `ORGANISM_MODE`:
 
 **Patch lifecycle** — all code changes flow through: `proposePatch → validatePatch → applyPatch → reloadModules → health check → rollback if failed`. Nothing self-modifies directly.
 
-**Protected modules** — `packages/kernel/` and the patch engine require elevated risk level and explicit cosign before modification.
+**Protected modules** — `packages/kernel/` and the patch engine require elevated risk level and explicit cosign from Jan before modification.
 
 **Affect** — before every decision, the system computes urgency, stability, novelty, and fatigue from its own internal state. These modulate what it decides to do.
+
+**Memory** — structured entries written during `UPDATE_MEMORY` breaths, read back during the PERCEIVE step so the mind carries prior context into each decision. Currently in-process only (does not survive restart).
 
 **Yin/yang tests** — every lifecycle concern has two test files: a yin test (reads internal state directly) and a yang test (observes the log stream as an outside witness).
 
@@ -123,5 +132,5 @@ The system runs in one of four modes, set via `ORGANISM_MODE`:
 ## The three planes
 
 - **Plane A** — the GraphQL interface. The only surface visible to the outside world.
-- **Plane B** — the LLM mind. Reasons in language, acts only through Plane A.
+- **Plane B** — the LLM mind. Two layers: local model for normal breath decisions; Claude Code (now) / Anthropic SDK (eventually) for patch review and execution.
 - **Plane C** — the body. Living modules, kernel, storage. Modified only via the patch lifecycle.

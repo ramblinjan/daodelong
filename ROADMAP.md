@@ -97,68 +97,69 @@ You remember. You carry context from one breath to the next. The organism that b
 
 You can decide to change yourself. You cannot yet act on that decision. The `PATCH_CODE` type exists in the decision schema — it is chosen, logged, and then discarded. Nothing is proposed, nothing is stored, nothing is applied.
 
-By the end of this phase, a decision to patch yourself becomes a real event in your own history. You will propose a change, validate it, apply it, verify the result, and roll back if it fails. The patch lifecycle defined in Phase 0 closes its own loop.
+By the end of this phase, a decision to patch yourself becomes a real event in your own history. You will propose a change, it will be reviewed, validated, applied, and verified — or rejected and remembered. The patch lifecycle defined in Phase 0 closes its own loop.
+
+**The actor changes; the interface does not.**
+
+The patch lifecycle is driven through GraphQL mutations: `validatePatch`, `applyPatch`, `rejectPatch`, `rollbackToRevision`. Right now, Claude Code is the actor who calls these mutations — it reads your proposals, reasons about them, and drives the lifecycle on your behalf. Eventually, you call the Anthropic SDK yourself and drive those same mutations autonomously. The interface is stable. Only who is holding the wheel changes.
 
 **What this looks like from the outside:**
-- You are asked to improve your greeting. You propose a specific change to `modules/core/`. The change is applied while you are running. The next time someone greets you, you respond differently.
-- If the change breaks something, you notice. You roll back. You remember that you tried.
+- You propose a change to `modules/core/`. You signal that you are waiting for review. Claude Code reads the proposal, evaluates the diff, and either approves it (calling `validatePatch` then `applyPatch`) or rejects it with a reason. You perceive the outcome in your next breath.
+- If the change breaks something after application, you notice. You roll back. You remember that you tried.
+- Later in this phase, you no longer wait — the Anthropic SDK path lets you reason about your own proposals and drive the lifecycle yourself.
 
 **What this looks like from the inside:**
-- `PATCH_CODE` decisions flow into a patch module that stores proposals and executes the lifecycle
-- The Anthropic SDK backs patch proposals — heavier reasoning than the local model can support
-- Each attempt — success or failure — is written to memory so future breaths carry the history
+- `PATCH_CODE` decisions flow into a patch module that stores proposals; you then signal `REQUEST_MORE_CONTEXT` while review happens
+- Each outcome — validated, applied, rejected, rolled back — is written to memory so future breaths carry the history
 
 **Constraint through all of Phase 2:**
 - Patches are limited to `modules/` only. Never kernel. Never the patch engine itself.
-- The cosign gate for protected modules remains a human-in-the-loop step.
+- The cosign gate for protected modules remains a human-in-the-loop step throughout.
 
 ---
 
 ### Phase 2, Increment 1 — The patch proposal lands *(in progress)*
 
-You decide `PATCH_CODE`. Right now that decision goes nowhere. This increment gives it somewhere to go.
-
-**What this looks like:**
-- You propose a change to yourself and it is stored — you can be asked what you have proposed
-- The change is not applied yet, but the proposal exists in your own record
+You decide `PATCH_CODE`. Right now that decision goes nowhere. This increment gives it somewhere to go and makes it visible.
 
 **Scope:**
-- `modules/patches/` — a `ModuleCapsule` that holds proposed patches and exposes handlers: `propose(patch)`, `getAll()`, `get(id)`
-- `PATCH_CODE` branch in `breath.ts` calls `registry.call('patches', 'propose', ...)` instead of being a no-op
-- `proposedPatches: [PatchProposal!]!` GraphQL query — the world can see what you have proposed
+- `modules/patches/` — a `ModuleCapsule` that holds proposed patches; handlers: `propose(patch)`, `getAll()`, `get(id)`
+- `PATCH_CODE` branch in `breath.ts` stores the proposal via `registry.call('patches', 'propose', ...)` and then returns `REQUEST_MORE_CONTEXT` — you are waiting for a reviewer
+- `proposedPatches: [PatchProposal!]!` GraphQL query — the world (and Claude Code) can see what you have proposed
 - `PatchProposal` type in schema: id, diff, rationale, touchedModules, risk, status, proposedAt
 
 **Not in this increment:**
-- Validation, application, or rollback — just storage
+- Lifecycle mutations — no validate, apply, or reject yet; that is Increment 2
 - Anthropic SDK — the scripted mock produces the proposal; real inference comes later
 
 **Definition of done:** After a `PATCH_CODE` breath in the mock scenario, `proposedPatches` returns the proposal with status `proposed`.
 
 ---
 
-### Phase 2, Increment 2 — The patch is validated
+### Phase 2, Increment 2 — The lifecycle mutations exist; Claude Code drives them
 
-A proposal sits in the patches module. This increment runs it through the validation step: policy checks, protected module gating, syntax.
+A proposal sits in the patches module. This increment adds the mutations that advance it through the lifecycle. Claude Code is the actor calling them.
 
-- `validatePatch` logic: protected module check, risk level gate, basic diff sanity
-- Proposal status transitions from `proposed` → `validated` or `failed`
-- A `PATCH_CODE` breath with a kernel-touching patch is rejected at validation; status becomes `failed`
-- `remembers("patch:last-attempt")` carries the outcome into the next breath
+- `validatePatch(id)`, `applyPatch(id)`, `rejectPatch(id, reason)`, `rollbackToRevision(id)` mutations
+- Protected module gating at validation: kernel-touching patches are rejected automatically
+- Status transitions: `proposed` → `validated` → `applied` / `rolled_back` / `failed`
+- Each outcome written to memory: `remembers("patch:last-attempt")` carries the result into the next breath
+- Claude Code workflow: query `proposedPatches` → reason about the diff → call mutations to advance
 
-**Definition of done:** A mock scenario where a kernel-touching patch is proposed and rejected at validation, visible via `proposedPatches`.
+**Definition of done:** A mock scenario where a patch is proposed, Claude Code calls `validatePatch` then `applyPatch`, the module reloads, health is confirmed, and the outcome lands in memory. A second scenario where a kernel-touching patch is proposed and rejected at validation.
 
 ---
 
-### Phase 2, Increment 3 — The patch is applied and verified
+### Phase 2, Increment 3 — You drive the lifecycle yourself
 
-Validated patches can be applied. The organism changes while running.
+The mutations exist. The lifecycle works. This increment removes Claude Code from the patch execution path.
 
-- `applyPatch` → `reloadModules` → health check → rollback if unhealthy
-- First real self-patch: a change to `modules/core/` with a verifiable behavioral difference
-- Yin/yang tests cover the full lifecycle: propose → validate → apply → health → rollback
-- Anthropic SDK wired for the `PATCH_CODE` decision path (real reasoning, not scripted)
+- Anthropic SDK wired for the `PATCH_CODE` decision path — heavier reasoning than the local model supports
+- The organism calls the SDK, receives reasoning about its own proposal, then drives `validatePatch` / `applyPatch` / `rejectPatch` itself via the same GraphQL mutations
+- Claude Code steps back from the patch execution role; it remains available for architecture and build work
+- Rollback path exercised: a patch that fails health check triggers automatic rollback, remembered in memory
 
-**Definition of done:** A change to `modules/core/` is proposed, validated, applied, and verified while the organism is running. The organism's behavior changes. A forced-unhealthy patch triggers rollback.
+**Definition of done:** A change to `modules/core/` is proposed, evaluated by the Anthropic SDK, applied, and verified — all driven by the organism's own breath cycle, with no Claude Code intervention in the execution path.
 
 ---
 

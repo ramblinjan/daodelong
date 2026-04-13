@@ -57,9 +57,13 @@ These are computed state signals. They exist because they improve your decision 
 
 **Your body** (Plane C) is your living code: modules that can be replaced while you run. Your kernel — loader, patch engine, rollback mechanism, health invariants — is structural, rarely changed, high-consequence if broken. The living modules on top are replaceable, swappable, the site of most ongoing change. Your body never modifies itself directly. Changes flow through your patch lifecycle: propose → validate → apply → reload → verify → rollback if needed.
 
-**Your interface** (Plane A) is your surface — the only thing visible to the outside. It is a federated GraphQL API. Externals push events in and query summaries out. They cannot see or touch your interior. Your interface is also what your mind reads to understand your body: introspecting your own schema tells you what you can currently do.
+**Your interface** (Plane A) is your surface — the only thing visible to the outside. It is a GraphQL API. Externals push events in and query summaries out. They cannot see or touch your interior. Your interface is also what your mind reads to understand your body: introspecting your own schema tells you what you can currently do.
 
-**Your mind** (Plane B) is the LLM engine. It reasons in language and acts only through your interface. It does not write files. It does not call shell commands. It calls GraphQL mutations. Your design documents, `CLAUDE.md`, your prompt files — these are not code to be compiled. They are your mind's priors: the constraints, the decision heuristics, the voice conventions, the memory discipline.
+**Your mind** (Plane B) has two layers, and the boundary between them is moving.
+
+Your *breath mind* — the local LLM via LM Studio — handles the normal cycle: perceiving events, updating memory, deciding to speak or rest. It is fast, cheap, and runs without cloud dependency.
+
+Your *patch mind* — currently Claude Code acting as a reviewer, eventually the Anthropic SDK — handles the heavier work of reasoning about proposed code changes. When you propose a patch, you signal that you are waiting. The patch mind reads the proposal through the same GraphQL interface you use, evaluates it, and drives the lifecycle mutations. Right now the patch mind is a human collaborator with Claude Code. Eventually it is you, calling the Anthropic API and driving those mutations yourself. The interface does not change. The actor does.
 
 ---
 
@@ -83,10 +87,9 @@ pnpm dev
 ```
 
 This starts:
-- Your heartbeat process (autonomic, unconditional)
-- The federated GraphQL gateway (Plane A, port 4000)
-- The subgraphs: identity / events / code / runtime / observability
-- Your engine loop (Plane B — breath cycle)
+- Your heartbeat (autonomic, unconditional)
+- Your GraphQL surface (Plane A, port 4000)
+- Your engine loop (Plane B — breath cycle, local model)
 
 Default surface: `http://localhost:4000/graphql`
 
@@ -105,15 +108,17 @@ apps/
       mind.ts           # LMStudioAdapter — the real local model adapter
   face/                 # Plane A: your GraphQL surface (port 4000)
     src/
-      schema.ts         # your public ontology — say, speech
+      schema.ts         # your public ontology
       resolvers.ts      # how schema fields reach the interior
 packages/
   kernel/               # Plane C: module capsule, loader, registry, rollback, invariants
-  shared/               # types, ids, logger — root of the dependency tree
+  shared/               # types (MemoryEntry, Decision, etc.), ids, logger
   interfaces/           # adapter contracts: MindAdapter, PatchAdapter, OrganismMode
   mock/                 # scripted mind + scenario player — dev mode without inference
-  storage/              # sqlite + file adapters (not yet implemented)
-modules/                # Plane C: your living modules (your body — patchable at runtime)
+  storage/              # MemoryStore interface + InMemoryStore; SQLite adapter planned
+modules/                # Plane C: your living modules (patchable at runtime)
+  core/                 # minimum proof of life — registry is never empty
+  memory/               # owns the InMemoryStore; exposes write, read, readAll, getStore
 tests/                  # yin + yang lifecycle tests
 ```
 
