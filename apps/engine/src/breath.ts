@@ -8,7 +8,7 @@ import { createLogger, ids } from '@daodelong/shared';
 import type { AffectVector, DecisionType, Decision } from '@daodelong/shared';
 import type { MindAdapter } from '@daodelong/interfaces';
 import type { MemoryStore } from '@daodelong/storage';
-import { checkHealth } from '@daodelong/kernel';
+import { checkHealth, registry } from '@daodelong/kernel';
 import { computeAffect, describeAffect, heartbeatIsHealthy } from './affect.js';
 import { currentPulseCount } from './heartbeat.js';
 import { drain, depth, oldestAgeMs } from './queue.js';
@@ -48,9 +48,9 @@ async function breathe(adapter: MindAdapter, memory: MemoryStore): Promise<void>
 
   log.debug('I inhale', { breath: breathCount });
 
-  // --- PERCEIVE ---
-  // I read the queue and drain it before orienting.
-  // I also read what I already know — memory entries arrive with me into the decision.
+  // --- XIN: perceive and feel ---
+  // I read what has arrived. I read what I already know. I compute affect.
+  // The heart-mind takes the measure of this moment before intent forms.
   const events = drain();
   const memoryEntries = memory.readAll();
   const queueDepth = events.length;
@@ -63,7 +63,6 @@ async function breathe(adapter: MindAdapter, memory: MemoryStore): Promise<void>
     log.debug('I carry memory into this breath', { breath: breathCount, entries: memoryEntries.length });
   }
 
-  // --- ORIENT ---
   const pulse = currentPulseCount();
   const recentPatchCount = recentPatches.filter(t => Date.now() - t < 300_000).length;
   const affect = computeAffect({
@@ -76,7 +75,7 @@ async function breathe(adapter: MindAdapter, memory: MemoryStore): Promise<void>
 
   log.info('I orient', { breath: breathCount, affect: describeAffect(affect), pulse });
 
-  // --- DECIDE ---
+  // --- YI: intent forms ---
   // I consult the mind when there are events to process.
   // You must not call the mind when the heartbeat is unhealthy — I default to NOOP.
   let decisionObj: Decision;
@@ -91,20 +90,30 @@ async function breathe(adapter: MindAdapter, memory: MemoryStore): Promise<void>
   const decision: DecisionType = decisionObj.type;
   log.info('I decide', { breath: breathCount, decision, intent: decisionObj.intent });
 
-  // --- ACT ---
+  // --- QI: act on intent ---
+  // For SPEAK and UPDATE_MEMORY, qi and li are immediate — no external assembly needed.
+  // For PATCH_CODE, I store the proposal. Qi assembles externally while I rest.
   if (decisionObj.type === 'SPEAK' && decisionObj.speech) {
     setLastSpeech({ text: decisionObj.speech.text, breathCount, ts: Date.now() });
     log.info('I speak', { breath: breathCount, text: decisionObj.speech.text });
   }
 
-  // --- VERIFY ---
+  if (decisionObj.type === 'PATCH_CODE' && decisionObj.patch) {
+    if (registry.has('patches')) {
+      const proposal = await registry.call('patches', 'propose', decisionObj.patch) as { id: string; enables: string };
+      log.info('I have formed yi — a patch proposal waits for qi', { breath: breathCount, id: proposal.id, enables: proposal.enables });
+      recentPatches.push(Date.now());
+    }
+  }
+
+  // --- LI: complete the cycle ---
+  // The body updates. Health is checked. What was learned is kept.
+  // This closes the cycle and prepares xin for the next breath.
   const health = checkHealth();
   if (!health.ok) {
     log.warn('I exhale unhealthy', { breath: breathCount, details: health.details });
   }
 
-  // --- LEARN ---
-  // I write whatever the mind decided to remember.
   if (decisionObj.memory?.writes) {
     for (const entry of decisionObj.memory.writes) {
       memory.write(entry);

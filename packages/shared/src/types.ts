@@ -70,12 +70,34 @@ export type DecisionType =
   | 'PATCH_CODE'
   | 'REQUEST_MORE_CONTEXT';
 
+// What the local model produces in a PATCH_CODE decision — yi only, no diff.
+// The diff is assembled by the reviewer during qi.
+export interface PatchIntent {
+  yi: string;                              // what to change and why — intent in the organism's own words
+  enables: string;                         // what the organism can do after — the li target
+  touchedModules: string[];
+  risk: { level: RiskLevel; why: string };
+}
+
+// A proposal stored in modules/patches/ — yi with lifecycle state.
+// diff is absent until the reviewer fills it in.
+export interface PatchProposal {
+  id: string;
+  yi: string;
+  enables: string;
+  touchedModules: string[];
+  risk: RiskLevel;
+  diff?: string;
+  status: PatchStatus;
+  proposedAt: number;
+  reviewedAt?: number;
+}
+
 export interface Decision {
   type: DecisionType;
   intent: string;
   speech?: { text: string };
-  risk?: { level: RiskLevel; why: string; rollbackPlan: string };
-  patch?: Omit<Patch, 'id' | 'status' | 'proposedAt'>;
+  patch?: PatchIntent;
   memory?: { writes: MemoryWrite[] };
   notesToSelf?: string;
 }

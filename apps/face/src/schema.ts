@@ -23,6 +23,11 @@ export const typeDefs = /* GraphQL */ `
     What the organism remembers about a given key, if anything.
     """
     remembers(key: String!): MemoryEntry
+
+    """
+    Patch proposals the organism has formed — yi waiting for qi.
+    """
+    proposedPatches: [PatchProposal!]!
   }
 
   type Mutation {
@@ -64,6 +69,27 @@ export const typeDefs = /* GraphQL */ `
     said: String!
     "When I said it, in my terms."
     when: String!
+  }
+
+  type PatchProposal {
+    "The unique identifier for this proposal."
+    id: String!
+    "What should change and why — in the organism's own words."
+    yi: String!
+    "What the organism will be able to do after — the li target."
+    enables: String!
+    "Which modules this change would touch."
+    touchedModules: [String!]!
+    "The assessed risk level."
+    risk: String!
+    "The diff to be applied — filled in by the reviewer, absent until then."
+    diff: String
+    "The current status of this proposal."
+    status: String!
+    "When this proposal was formed, as a Unix timestamp in milliseconds."
+    proposedAt: Float!
+    "When this proposal was reviewed, if it has been."
+    reviewedAt: Float
   }
 
   type MemoryEntry {

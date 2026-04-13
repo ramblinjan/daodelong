@@ -6,3 +6,4 @@ export type { Scenario, Stimulus, ScriptedDecision } from './scenario.js';
 export { firstContact } from './scenarios/first-contact.js';
 export { highLoad } from './scenarios/high-load.js';
 export { instability } from './scenarios/instability.js';
+export { capabilityGap } from './scenarios/capability-gap.js';

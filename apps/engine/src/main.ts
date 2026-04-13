@@ -19,9 +19,11 @@ const log = createLogger('engine:main');
 const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '../../..');
 const CORE_PATH = resolve(ROOT, 'modules/core/index.ts');
 const MEMORY_PATH = resolve(ROOT, 'modules/memory/index.ts');
+const PATCHES_PATH = resolve(ROOT, 'modules/patches/index.ts');
 
 const ctx = { logger: createLogger('module:core'), config: {} };
 const memoryCtx = { logger: createLogger('module:memory'), config: {} };
+const patchesCtx = { logger: createLogger('module:patches'), config: {} };
 
 const mode = (process.env.ORGANISM_MODE ?? 'dev') as OrganismMode;
 log.info('I am waking up', { mode });
@@ -37,6 +39,13 @@ if (!result.ok) {
 const memResult = await loadModule(MEMORY_PATH, ids.revision(), memoryCtx);
 if (!memResult.ok) {
   log.error('I could not load the memory module — I cannot start', { error: memResult.error });
+  process.exit(1);
+}
+
+// I load patches next — it must be ready to receive proposals from the first breath.
+const patchResult = await loadModule(PATCHES_PATH, ids.revision(), patchesCtx);
+if (!patchResult.ok) {
+  log.error('I could not load the patches module — I cannot start', { error: patchResult.error });
   process.exit(1);
 }
 

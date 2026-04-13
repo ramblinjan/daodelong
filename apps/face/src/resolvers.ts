@@ -3,7 +3,7 @@
 // I read real state from the heartbeat and affect systems.
 
 import { checkHealth, registry } from '@daodelong/kernel';
-import type { MemoryEntry } from '@daodelong/storage';
+import type { MemoryEntry, PatchProposal } from '@daodelong/shared';
 import { currentPulseCount, recentPulses } from '../../engine/src/heartbeat.js';
 import { currentBreathCount, recentBreaths } from '../../engine/src/breath.js';
 import { computeAffect, describeAffect } from '../../engine/src/affect.js';
@@ -69,6 +69,11 @@ export const resolvers = {
         said: s.text,
         when: `breath ${s.breathCount}`,
       };
+    },
+
+    proposedPatches: async () => {
+      if (!registry.has('patches')) return [];
+      return await registry.call('patches', 'getAll') as PatchProposal[];
     },
 
     remembers: async (_: unknown, { key }: { key: string }) => {
