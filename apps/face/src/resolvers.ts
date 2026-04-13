@@ -2,7 +2,8 @@
 // I speak as the organism. I do not expose kernel types or affect vectors directly.
 // I read real state from the heartbeat and affect systems.
 
-import { checkHealth } from '@daodelong/kernel';
+import { checkHealth, registry } from '@daodelong/kernel';
+import type { MemoryEntry } from '@daodelong/storage';
 import { currentPulseCount, recentPulses } from '../../engine/src/heartbeat.js';
 import { currentBreathCount, recentBreaths } from '../../engine/src/breath.js';
 import { computeAffect, describeAffect } from '../../engine/src/affect.js';
@@ -67,6 +68,19 @@ export const resolvers = {
       return {
         said: s.text,
         when: `breath ${s.breathCount}`,
+      };
+    },
+
+    remembers: async (_: unknown, { key }: { key: string }) => {
+      if (!registry.has('memory')) return null;
+      const entry = await registry.call('memory', 'read', key) as MemoryEntry | undefined;
+      if (!entry) return null;
+      return {
+        key: entry.key,
+        kind: entry.kind,
+        value: JSON.stringify(entry.value),
+        ttlDays: entry.ttlDays,
+        writtenAt: entry.writtenAt,
       };
     },
   },

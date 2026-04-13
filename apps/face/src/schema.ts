@@ -18,6 +18,11 @@ export const typeDefs = /* GraphQL */ `
     The last thing the organism said, if it has spoken.
     """
     speech: Speech
+
+    """
+    What the organism remembers about a given key, if anything.
+    """
+    remembers(key: String!): MemoryEntry
   }
 
   type Mutation {
@@ -59,5 +64,18 @@ export const typeDefs = /* GraphQL */ `
     said: String!
     "When I said it, in my terms."
     when: String!
+  }
+
+  type MemoryEntry {
+    "The key this memory was stored under."
+    key: String!
+    "The kind of memory — RELATIONAL or VISUAL_LEXICAL."
+    kind: String!
+    "The stored value, as a JSON string."
+    value: String!
+    "How long this memory should persist, in days."
+    ttlDays: Int!
+    "When this was written, as a Unix timestamp in milliseconds."
+    writtenAt: Float!
   }
 `;

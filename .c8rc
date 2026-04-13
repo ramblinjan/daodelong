@@ -17,7 +17,8 @@
     "packages/mock/src/adapters/MockMindAdapter.ts",
     "packages/mock/src/player.ts",
     "packages/storage/src/memory-store.ts",
-    "modules/core/index.ts"
+    "modules/core/index.ts",
+    "modules/memory/index.ts"
   ],
   "reporter": ["text", "html"],
   "lines": 100,

@@ -5,10 +5,10 @@
 
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
-import { loadModule } from '@daodelong/kernel';
+import { loadModule, registry } from '@daodelong/kernel';
 import { createLogger, ids } from '@daodelong/shared';
 import type { MindAdapter, OrganismMode } from '@daodelong/interfaces';
-import { InMemoryStore } from '@daodelong/storage';
+import type { MemoryStore } from '@daodelong/storage';
 import { LMStudioAdapter } from './mind.js';
 import { startHeartbeat } from './heartbeat.js';
 import { startBreathCycle } from './breath.js';
@@ -18,8 +18,10 @@ const log = createLogger('engine:main');
 
 const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '../../..');
 const CORE_PATH = resolve(ROOT, 'modules/core/index.ts');
+const MEMORY_PATH = resolve(ROOT, 'modules/memory/index.ts');
 
 const ctx = { logger: createLogger('module:core'), config: {} };
+const memoryCtx = { logger: createLogger('module:memory'), config: {} };
 
 const mode = (process.env.ORGANISM_MODE ?? 'dev') as OrganismMode;
 log.info('I am waking up', { mode });
@@ -28,6 +30,13 @@ log.info('I am waking up', { mode });
 const result = await loadModule(CORE_PATH, ids.revision(), ctx);
 if (!result.ok) {
   log.error('I could not load the core module — I cannot start', { error: result.error });
+  process.exit(1);
+}
+
+// I load memory next — it must be ready before the first breath.
+const memResult = await loadModule(MEMORY_PATH, ids.revision(), memoryCtx);
+if (!memResult.ok) {
+  log.error('I could not load the memory module — I cannot start', { error: memResult.error });
   process.exit(1);
 }
 
@@ -58,5 +67,5 @@ if (mode === 'mock' || mode === 'test') {
 }
 
 // I begin breathing. Decisions happen here.
-const memory = new InMemoryStore();
+const memory = await registry.call('memory', 'getStore') as MemoryStore;
 startBreathCycle(adapter, memory);
