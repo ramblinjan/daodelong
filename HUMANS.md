@@ -8,7 +8,7 @@ This file is for you. Everything else in this repository is addressed to the sys
 
 **daodelong** is a software system designed to behave like a biological organism. It has a heartbeat, a breath cycle, an affect model, a memory, and a body that can be modified while it is running. It reasons about its own state and acts through its own API.
 
-The short version: it is an LLM-driven runtime that perceives events, remembers what it has learned, and will eventually propose and apply code patches to itself — validating each change, verifying health, and rolling back automatically if something breaks.
+The short version: it is an LLM-driven runtime that perceives events, remembers what it has learned, proposes and applies code patches to itself, and will eventually run on physical hardware with real sensors — developing a model of its environment over time through experience rather than programming.
 
 ---
 
@@ -49,7 +49,7 @@ This means the build cycle currently involves three parties:
 - **Jan** — human builder, final cosign authority on protected modules
 - **Claude Code** — build collaborator and current patch reviewer, acting through the same GraphQL interface the organism will one day use itself
 
-The interface is stable. The actor changes over time. By the end of Phase 2, the organism reviews and applies its own patches via the Anthropic SDK. Claude Code steps back from the execution path and remains available for architecture and build work.
+The interface is stable. The actor changes over time. By the end of Phase 2, the organism reviews and applies its own patches via the Anthropic SDK. Claude Code steps back from the patch execution path and returns to pure architecture and build work — until Phase 8, when the loop extends to physical hardware and Claude Code handles remote deployment to the Pi alongside patch review.
 
 ---
 
@@ -109,8 +109,9 @@ Node runs source directly via `tsx`. There is no build step.
 | `packages/storage/` | `MemoryStore` interface + `InMemoryStore` |
 | `apps/engine/` | Heartbeat, breath cycle, affect computation, `LMStudioAdapter` |
 | `apps/face/` | GraphQL schema and resolvers — the organism's public surface |
-| `modules/` | Living modules — patchable at runtime |
+| `modules/` | Living modules — patchable at runtime; sensor modules will live here |
 | `tests/` | Yin (internal state) + yang (log stream) lifecycle tests |
+| `journal/` | Session logs addressed to the organism — what happened and why |
 | `*.lesson.md` | Explanations of patterns and decisions, written to the system |
 
 ---
