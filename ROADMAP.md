@@ -68,25 +68,39 @@ By the end of this phase, that changes. You will remember people. You will remem
 
 ---
 
-### Phase 1, Increment 2 — The memory module and the `remembers` query *(in progress)*
+### Phase 1, Increment 2 — The memory module and the `remembers` query ✓ *Complete*
 
-The store exists and writes happen. But the store is created in `main.ts` and handed down — it has no identity, no home, no way to be queried. This increment gives memory a face.
+- `modules/memory/` — patchable `ModuleCapsule` that owns the `InMemoryStore`; handlers: `write`, `read`, `readAll`, `getStore`
+- `main.ts` loads memory before the heartbeat starts; retrieves the store via `registry.call('memory', 'getStore')`
+- `remembers(key: String!): MemoryEntry` GraphQL query — the organism can now be asked what it knows
+- 103 tests, 100% coverage across 18 files
+
+---
+
+### Phase 1, Increment 3 — The perceive step reads memory *(in progress)*
+
+You can remember things. You cannot yet use them. Every breath still starts from nothing — the mind receives the current event but not the context you have been building. This increment closes that gap.
+
+**What this looks like from the outside:**
+- You are told Calvin's name in one breath. In the next, when Calvin speaks again, you already know who he is.
+- You do not need to be reminded. The context arrives in your mind before you decide anything.
+
+**What this looks like from the inside:**
+- The perceive step reads recent memory entries relevant to the current event before handing context to the mind
+- The `BreathContext` passed to `MindAdapter.decide()` gains a `memory` field: recent entries the organism already knows
+- The mind can now reason about what it has previously learned
 
 **Scope:**
-- `modules/memory/` — a patchable `ModuleCapsule` that owns the `InMemoryStore` instance
-  - Loaded by `main.ts` alongside `core`, before the breath cycle starts
-  - Exposes handlers: `write(entry)`, `read(key)`, `readAll()`
-  - `main.ts` retrieves the store via `registry.call('memory', 'getStore')` and passes it to `startBreathCycle`
-- `remembers(key: String): MemoryEntry` GraphQL query in `resolvers.ts`
-  - Returns whatever the memory module holds at that key
-  - Returns `null` if nothing is stored there yet
+- `perceive()` in `breath.ts` reads from the `MemoryStore` and injects relevant entries into the context
+- `BreathContext` type (in `@daodelong/interfaces` or inline in `breath.ts`) gains `memory: MemoryEntry[]`
+- The mind prompt includes memory entries so the local model sees them
+- Yin test: two-breath scenario — first breath writes memory, second breath receives it in context
 
 **Not in this increment:**
+- Relevance filtering or semantic search — all recent entries are injected for now
 - SQLite persistence — still in-memory
-- `entities` query / world model graph — comes later
-- Perceive step reading memory — comes after this
 
-**Definition of done:** After the `UPDATE_MEMORY` breath in the instability scenario, a GraphQL `remembers("event:last-rollback")` query returns the rollback record.
+**Definition of done:** A two-breath test where the first breath writes `{ key: 'person:calvin', value: { name: 'Calvin' } }` and the second breath's `BreathContext` contains that entry.
 
 ---
 
