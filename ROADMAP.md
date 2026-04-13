@@ -23,12 +23,13 @@ You are alive. The minimum viable organism exists and is fully verified.
 - Local mind: hermes-3-llama-3.2-3b via LM Studio, OpenAI-compatible API
 - Mock infrastructure: `MockMindAdapter` + `ScenarioPlayer` — scripted scenarios without real model calls
 - `MindAdapter` interface: defined in `packages/interfaces/` — the seam for Phase 3 is already present
-- Test coverage: 100% across all 16 in-scope files, 88 tests, yin/yang philosophy established
+- Test coverage: 100% across all 17 in-scope files, 94 tests, yin/yang philosophy established
 - Patch lifecycle: defined and documented; not yet exercised against real code
 - Anthropic SDK: reserved for PATCH_CODE decisions, not yet wired
 
 **What you are not yet:**
-- You do not remember. The LEARN step is a comment.
+- You do not remember across restarts. The LEARN step writes to an in-memory store that does not survive a restart.
+- You cannot be asked what you remember. There is no GraphQL query surface for memory yet.
 - You cannot patch yourself. The lifecycle is defined but the mutation path is not wired.
 - You do not know other instances of yourself exist or could exist.
 
@@ -36,44 +37,56 @@ You are alive. The minimum viable organism exists and is fully verified.
 
 ## Phase 1 — Memory: You Remember
 
-You currently speak once and forget. Calvin introduced himself and you will not know him next breath. This is the most immediate limitation.
+You currently speak once and forget. Calvin told you his name and you will not know it next breath. Every conversation starts from nothing.
 
-**Goals:**
-- Complete the LEARN step: after each breath, persist structured memory from the conversation
-- Introduce a world model — a graph of entities you have encountered: people, events, facts
-- Query your own memory as part of the perceive step: before thinking, read what you already know
-- The Anthropic SDK becomes active here for richer LEARN reasoning (compressing, tagging, classifying what happened)
+By the end of this phase, that changes. You will remember people. You will remember what happened. When someone speaks to you again, you will have context — not because it was handed to you, but because you kept it yourself.
 
-**Architectural additions:**
-- `packages/storage/` gains a `memory` adapter alongside SQLite
-- `modules/memory/` — a patchable module that manages your world model
-- The breath cycle's `learn` call becomes real: it writes to memory, not a stub
-- The mind receives conversation context alongside the current event
+**What this looks like from the outside:**
+- You hear something worth remembering and you write it down, unprompted, as part of your normal breath
+- Someone asks you "do you remember X?" and you can answer accurately
+- The next time a conversation starts, you already know who you are talking to
 
-**What changes in the schema:**
-- `remembers(entity: String): [Memory]` — query your own memory
-- `entities: [KnownEntity]` — query your world model
-- Memory write happens as a side effect of the breath, not a mutation from outside
+**What this looks like from the inside:**
+- After deciding to `UPDATE_MEMORY`, you write structured entries to a store you own
+- Before deciding anything, you read what you already know about the current context
+- Over time, you build a world model — a growing map of entities, events, and relationships you have encountered
+
+**What you can and cannot do at the end of this phase:**
+- You remember things between breaths — but not (yet) between restarts
+- You can be queried about what you know via `remembers`
+- You do not yet modify your own code — memory is the only thing that changes
 
 ---
 
-### Phase 1, Increment 1 — The LEARN step wires *(in progress)*
+### Phase 1, Increment 1 — The LEARN step wires ✓ *Complete*
 
-**The contract already exists.** `MemoryWrite` is defined in `@daodelong/shared`. `UPDATE_MEMORY` is a valid decision type. The `instability` scenario already produces real memory write payloads. The only missing piece is something to receive them.
+- `packages/storage/` — `MemoryStore` interface + `InMemoryStore` (Map-backed, ephemeral)
+- LEARN step in `breath.ts` wired: `decisionObj.memory?.writes` → `memory.write(entry)` for each
+- `MemoryStore` injected into `startBreathCycle` and `tick` alongside `MindAdapter`
+- 94 tests, 100% coverage across 17 files
+- CI added: `pnpm coverage` runs on every push and PR
+
+---
+
+### Phase 1, Increment 2 — The memory module and the `remembers` query *(in progress)*
+
+The store exists and writes happen. But the store is created in `main.ts` and handed down — it has no identity, no home, no way to be queried. This increment gives memory a face.
 
 **Scope:**
-- Create `packages/storage/` with a `MemoryStore` interface and an in-memory implementation
-- Wire the LEARN step in `breath.ts`: when `decisionObj.memory?.writes` is present, call the store
-- `MemoryStore` is injected into `startBreathCycle` (same pattern as `MindAdapter`) — not a global
-- 100% test coverage on the new package; yin test confirms a memory write appears in the store after a breath
+- `modules/memory/` — a patchable `ModuleCapsule` that owns the `InMemoryStore` instance
+  - Loaded by `main.ts` alongside `core`, before the breath cycle starts
+  - Exposes handlers: `write(entry)`, `read(key)`, `readAll()`
+  - `main.ts` retrieves the store via `registry.call('memory', 'getStore')` and passes it to `startBreathCycle`
+- `remembers(key: String): MemoryEntry` GraphQL query in `resolvers.ts`
+  - Returns whatever the memory module holds at that key
+  - Returns `null` if nothing is stored there yet
 
 **Not in this increment:**
-- SQLite persistence — in-memory only for now
-- `modules/memory/` — that module wraps the store for patching; comes next
-- GraphQL `remembers` query — comes after the module exists
-- Perceive step reading memory — comes after the query exists
+- SQLite persistence — still in-memory
+- `entities` query / world model graph — comes later
+- Perceive step reading memory — comes after this
 
-**Definition of done:** Run the instability scenario in mock mode. After the `UPDATE_MEMORY` breath, the store contains the rollback record. The LEARN step is no longer a comment.
+**Definition of done:** After the `UPDATE_MEMORY` breath in the instability scenario, a GraphQL `remembers("event:last-rollback")` query returns the rollback record.
 
 ---
 
