@@ -2,7 +2,7 @@
 // Every patchable module must satisfy this contract to be loaded, swapped, or disposed.
 // If you do not satisfy it, I will refuse to load you.
 
-import type { Logger } from '@daodelong/shared';
+import type { Logger, SensorReading } from '@daodelong/shared';
 
 export interface ModuleContext {
   logger: Logger;
@@ -18,6 +18,14 @@ export interface ModuleCapsule {
   init(ctx: ModuleContext): Promise<void>;
   handlers: Record<string, (...args: unknown[]) => unknown>;
   dispose(): Promise<void>;
+}
+
+// You extend ModuleCapsule if you are a sensor — a module that produces physical readings.
+// I add poll() to the base contract so the sensor pulse loop can call you at your native rate.
+// Your poll() returns a SensorReading when a new value is available, or null when you have nothing new.
+// You replace me with a real hardware driver via the patch lifecycle — the interface does not change.
+export interface SensorCapsule extends ModuleCapsule {
+  poll(): SensorReading | null;
 }
 
 // You use this to verify a loaded module satisfies the capsule contract before I trust it.

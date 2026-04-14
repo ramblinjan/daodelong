@@ -5,6 +5,8 @@ export type EventKind =
   | 'external.message'
   | 'external.data'
   | 'external.webhook'
+  | 'external.sensor.proximity'
+  | 'external.sensor.environment'
   | 'internal.heartbeat'
   | 'internal.breath'
   | 'internal.patch'
@@ -102,6 +104,16 @@ export interface Decision {
   patch?: PatchIntent;
   memory?: { writes: MemoryWrite[] };
   notesToSelf?: string;
+}
+
+// A reading produced by a sensor module's poll() method.
+// I carry the sensor's identity, kind, value, and timestamp.
+// The sensor pulse loop translates me into a typed event and enqueues me.
+export interface SensorReading {
+  moduleId: string;
+  kind: string;    // 'proximity', 'environment', etc. — determines the EventKind prefix
+  value: unknown;  // sensor-specific payload; callers cast to the known shape
+  ts: number;
 }
 
 export interface MemoryWrite {

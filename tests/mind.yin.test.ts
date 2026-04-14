@@ -104,6 +104,33 @@ test('LMStudioAdapter builds the user message from events and affect', async () 
   mock.restoreAll();
 });
 
+test('LMStudioAdapter includes a sensor readings section when sensor events are present', async () => {
+  let capturedBody: unknown;
+  mock.method(globalThis, 'fetch', async (_url: string, init: RequestInit) => {
+    capturedBody = JSON.parse(init.body as string);
+    return fakeOkResponse({ choices: [{ message: { content: JSON.stringify({ type: 'NOOP', intent: 'x' }) } }] });
+  });
+
+  const sensorEvent: Event = {
+    id: 'e2',
+    kind: 'external.sensor.proximity',
+    lexical: 'sense/proximity: {"distance":1.23}',
+    semantic: { moduleId: 'sense/proximity', kind: 'proximity', value: { distance: 1.23 }, ts: Date.now() },
+    receivedAt: Date.now(),
+  };
+  const adapter = new LMStudioAdapter();
+  await adapter.decide([sensorEvent], CALM, 3, []);
+
+  const body = capturedBody as { messages: { role: string; content: string }[] };
+  const userMsg = body.messages.find(m => m.role === 'user')!.content;
+  assert.ok(userMsg.includes('What I sense'), 'expected sensor section header');
+  assert.ok(userMsg.includes('proximity'), 'expected proximity kind');
+  assert.ok(userMsg.includes('1.23'), 'expected distance value');
+  // I confirm the sensor event is not also listed under Events.
+  assert.ok(!userMsg.includes('external.sensor.proximity'), 'sensor event should not appear in Events section');
+  mock.restoreAll();
+});
+
 test('LMStudioAdapter includes memory entries in the user message when present', async () => {
   let capturedBody: unknown;
   mock.method(globalThis, 'fetch', async (_url: string, init: RequestInit) => {

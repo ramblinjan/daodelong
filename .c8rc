@@ -6,6 +6,7 @@
     "apps/engine/src/heartbeat.ts",
     "apps/engine/src/mind.ts",
     "apps/engine/src/queue.ts",
+    "apps/engine/src/sensor.ts",
     "apps/engine/src/speech.ts",
     "apps/face/src/resolvers.ts",
     "packages/kernel/src/invariants.ts",
@@ -19,7 +20,9 @@
     "packages/storage/src/memory-store.ts",
     "modules/core/index.ts",
     "modules/memory/index.ts",
-    "modules/patches/index.ts"
+    "modules/patches/index.ts",
+    "modules/sense/proximity/index.ts",
+    "modules/sense/environment/index.ts"
   ],
   "reporter": ["text", "html"],
   "lines": 100,

@@ -153,16 +153,15 @@ A proposal sits in the patches module. This increment adds the mutations that ad
 
 ---
 
-### Phase 2, Increment 3 — You drive the lifecycle yourself
+### Phase 2, Increment 3 — You drive the lifecycle yourself *(deferred)*
 
-The mutations exist. The lifecycle works. This increment removes Claude Code from the patch execution path.
+The mutations exist. The lifecycle works. This increment would remove Claude Code from the patch execution path by wiring the Anthropic SDK.
 
-- Anthropic SDK wired for the `PATCH_CODE` decision path — heavier reasoning than the local model supports
-- The organism calls the SDK, receives reasoning about its own proposal, then drives `validatePatch` / `applyPatch` / `rejectPatch` itself via the same GraphQL mutations
-- Claude Code steps back from the patch execution role; it remains available for architecture and build work
-- Rollback path exercised: a patch that fails health check triggers automatic rollback, remembered in memory
+**Why deferred:** The API usage is a separate billing cost from the Pro subscription. More importantly, the deployment loop already works without it: proposals accumulate in `proposedPatches`; Claude Code (or a human remoted into the device) queries the GraphQL endpoint, reads the yi, writes the diff, and drives the lifecycle mutations. The interface is stable. The actor question is a runtime detail.
 
-**Definition of done:** A change to `modules/core/` is proposed, evaluated by the Anthropic SDK, applied, and verified — all driven by the organism's own breath cycle, with no Claude Code intervention in the execution path.
+When the organism is on real hardware, the patch review loop is: organism proposes → proposal logged → remote session reads it → Claude Code implements and calls mutations over the network. Same lifecycle. No SDK required.
+
+**If this ever becomes worth wiring:** Anthropic SDK in the `PATCH_CODE` decision path, organism calls `validatePatch` / `applyPatch` / `rejectPatch` autonomously, rollback path exercised. The mutations are already waiting.
 
 ---
 

@@ -58,6 +58,17 @@ export class LMStudioAdapter implements MindAdapter {
   }
 
   async decide(events: Event[], affect: AffectVector, breathCount: number, memory: MemoryEntry[]): Promise<Decision> {
+    const sensorEvents = events.filter(e => e.kind.startsWith('external.sensor.'));
+    const nonSensorEvents = events.filter(e => !e.kind.startsWith('external.sensor.'));
+
+    const sensorLines = sensorEvents.length > 0
+      ? ['', `What I sense (${sensorEvents.length} readings):`, ...sensorEvents.map(e => {
+          const kind = e.kind.replace('external.sensor.', '');
+          const reading = e.semantic as { value: unknown };
+          return `  [${kind}] ${JSON.stringify(reading.value)}`;
+        })]
+      : [];
+
     const memoryLines = memory.length > 0
       ? ['', `Memory (${memory.length} entries):`, ...memory.map(m => `  [${m.key}] ${JSON.stringify(m.value)}`)]
       : [];
@@ -65,10 +76,11 @@ export class LMStudioAdapter implements MindAdapter {
     const userMessage = [
       `Breath: ${breathCount}`,
       `Affect: ${describeAffect(affect)}`,
-      `Events (${events.length}):`,
-      events.length > 0
-        ? events.map(e => `  [${e.kind}] ${e.lexical}`).join('\n')
+      `Events (${nonSensorEvents.length}):`,
+      nonSensorEvents.length > 0
+        ? nonSensorEvents.map(e => `  [${e.kind}] ${e.lexical}`).join('\n')
         : '  (none)',
+      ...sensorLines,
       ...memoryLines,
       '',
       'Decide.',

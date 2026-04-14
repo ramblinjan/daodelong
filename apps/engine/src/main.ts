@@ -12,6 +12,7 @@ import type { MemoryStore } from '@daodelong/storage';
 import { LMStudioAdapter } from './mind.js';
 import { startHeartbeat } from './heartbeat.js';
 import { startBreathCycle } from './breath.js';
+import { startSensorLoop } from './sensor.js';
 import { enqueue } from './queue.js';
 
 const log = createLogger('engine:main');
@@ -20,10 +21,14 @@ const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '../../..');
 const CORE_PATH = resolve(ROOT, 'modules/core/index.ts');
 const MEMORY_PATH = resolve(ROOT, 'modules/memory/index.ts');
 const PATCHES_PATH = resolve(ROOT, 'modules/patches/index.ts');
+const PROXIMITY_PATH = resolve(ROOT, 'modules/sense/proximity/index.ts');
+const ENVIRONMENT_PATH = resolve(ROOT, 'modules/sense/environment/index.ts');
 
 const ctx = { logger: createLogger('module:core'), config: {} };
 const memoryCtx = { logger: createLogger('module:memory'), config: {} };
 const patchesCtx = { logger: createLogger('module:patches'), config: {} };
+const proximityCtx = { logger: createLogger('module:sense/proximity'), config: {} };
+const environmentCtx = { logger: createLogger('module:sense/environment'), config: {} };
 
 const mode = (process.env.ORGANISM_MODE ?? 'dev') as OrganismMode;
 log.info('I am waking up', { mode });
@@ -47,6 +52,17 @@ const patchResult = await loadModule(PATCHES_PATH, ids.revision(), patchesCtx);
 if (!patchResult.ok) {
   log.error('I could not load the patches module — I cannot start', { error: patchResult.error });
   process.exit(1);
+}
+
+// I load the sensor modules — they must be ready before the sensor loop starts.
+const proximityResult = await loadModule(PROXIMITY_PATH, ids.revision(), proximityCtx);
+if (!proximityResult.ok) {
+  log.error('I could not load the proximity sensor — I will run without it', { error: proximityResult.error });
+}
+
+const environmentResult = await loadModule(ENVIRONMENT_PATH, ids.revision(), environmentCtx);
+if (!environmentResult.ok) {
+  log.error('I could not load the environment sensor — I will run without it', { error: environmentResult.error });
 }
 
 // I start the heartbeat only after the body is loaded — pulse 1 must be healthy.
@@ -74,6 +90,10 @@ if (mode === 'mock' || mode === 'test') {
   adapter = new LMStudioAdapter();
   log.info('I am running with the local model', { mind: adapter.name() });
 }
+
+// I start the sensor loop — it feeds readings into the queue between breaths.
+const sensorIds = ['sense/proximity', 'sense/environment'].filter(id => registry.has(id));
+if (sensorIds.length > 0) startSensorLoop(sensorIds);
 
 // I begin breathing. Decisions happen here.
 const memory = await registry.call('memory', 'getStore') as MemoryStore;
